@@ -35,6 +35,7 @@ import PyQt5.QtGui as QtGui
 
 import numpy as np
 from mplwidget import MplWidget
+import matplotlib
 
 from widgetstate import set_state, get_state
 from smooth import smooth
@@ -85,12 +86,20 @@ class MainWindow(QMainWindow):
         #self.mplw.ntb.setFixedSize(300, 24)
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
+        axes = self.mplw.canvas.ax
+        axes.clear()
+        axes.set_xlabel('Time, s')
+        axes.set_ylabel('Signal, V')
+        axes.grid(color='k', linestyle='--')
+        x = np.arange(100.0)
+        y = np.sin(x)
+        axes.plot(x, y)
 
         # Class members definition
 
         # Connect signals with slots
         self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
-        ##self.pushButton_1.clicked.connect(self.selectLogFile)
+        self.pushButton.clicked.connect(self.erase)
         ##self.comboBox_1.currentIndexChanged.connect(self.logLevelIndexChanged)
         ##self.tableWidget_3.itemSelectionChanged.connect(self.table_sel_changed)
         ##self.plainTextEdit_1.textChanged.connect(self.refresh_on)
@@ -124,6 +133,10 @@ class MainWindow(QMainWindow):
         self.files = [f for f in files if f.endswith('.isf')]
         self.listWidget.addItems(self.files)
 
+    def erase(self):
+        self.mplw.canvas.ax.clear()
+        self.mplw.canvas.draw()
+
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
         axes.clear()
@@ -135,7 +148,7 @@ class MainWindow(QMainWindow):
             print(item.text())
             x, y, head = isfread(item.text())
             axes.plot(x, y)
-
+        self.mplw.canvas.draw()
 
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME + ' Version ' + APPLICATION_VERSION +

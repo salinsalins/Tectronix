@@ -30,6 +30,7 @@ except:
 # Matplotlib Figure object
 # import the NavigationToolbar Qt4(5)Agg widget
 
+
 class MplCanvas(FigureCanvas):
     """Class to represent the FigureCanvas widget"""
     def __init__(self):
@@ -60,7 +61,7 @@ class MplWidget(QtGui.QWidget):
         self.vbl.setSpacing(0)
         
         self.ntb = NavigationToolbar(self.canvas, parent)
-        self.ntb.hide()
+        #self.ntb.hide()
         self.vbl.addWidget(self.ntb)
         
         # add mpl widget to vertical box
