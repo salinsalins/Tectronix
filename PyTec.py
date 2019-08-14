@@ -37,12 +37,15 @@ import numpy as np
 from mplwidget import MplWidget
 
 from widgetstate import set_state, get_state
+from smooth import smooth
+from isfread import isfread
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'PyTec'
 APPLICATION_NAME_SHORT = APPLICATION_NAME
 APPLICATION_VERSION = '0_1'
-CONFIG_FILE = APPLICATION_NAME + '.json'
+CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
+UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -68,25 +71,25 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
 
         # Load the UI
-        uic.loadUi('PyIonSourceUI.ui', self)
+        uic.loadUi(UI_FILE, self)
         # Default window parameters
         self.setMinimumSize(QSize(480, 240))  # Set sizes
         self.resize(QSize(640, 480))
         self.move(QPoint(50, 50))
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
-        self.setWindowIcon(QtGui.QIcon('icon.png'))
+        #self.setWindowIcon(QtGui.QIcon('icon.png'))
 
-        # Additional logging config
-        self.logger = logger
-        text_edit_handler = TextEditHandler(self.plainTextEdit)
-        text_edit_handler.setFormatter(log_formatter)
-        self.logger.addHandler(text_edit_handler)
+        # Create new plot widget
+        self.mplw = MplWidget()
+        #self.mplw.ntb.setIconSize(QSize(18, 18))
+        #self.mplw.ntb.setFixedSize(300, 24)
+        layout = self.frame_3.layout()
+        layout.addWidget(self.mplw)
 
         # Class members definition
-        self.refresh_flag = False
-        self.last_selection = -1
 
         # Connect signals with slots
+        self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         ##self.pushButton_1.clicked.connect(self.selectLogFile)
         ##self.comboBox_1.currentIndexChanged.connect(self.logLevelIndexChanged)
         ##self.tableWidget_3.itemSelectionChanged.connect(self.table_sel_changed)
@@ -99,20 +102,40 @@ class MainWindow(QMainWindow):
         self.actionParameters.triggered.connect(self.show_param_pane)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
-        # Disable text wrapping in log window
-        self.plainTextEdit.setLineWrapMode(0)
         #self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
         #self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
         self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
-        self.doubleSpinBox_4.setSingleStep(0.1)
+        #self.doubleSpinBox_4.setSingleStep(0.1)
         # Clock at status bar
         self.clock = QLabel(" ")
-        self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
+        #self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
+        self.clock.setFont(QFont('Open Sans Bold', 12))
         self.statusBar().addPermanentWidget(self.clock)
 
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
         self.restore_settings()
+        self.read_folder('./')
+
+    def read_folder(self, folder):
+        # All files in the folder
+        files = os.listdir(folder)
+        # Filter *.isf files
+        self.files = [f for f in files if f.endswith('.isf')]
+        self.listWidget.addItems(self.files)
+
+    def list_selection_changed(self):
+        axes = self.mplw.canvas.ax
+        axes.clear()
+        axes.set_xlabel('Time, s')
+        axes.set_ylabel('Signal, V')
+        axes.grid(color='k', linestyle='--')
+        sel = self.listWidget.selectedItems()
+        for item in sel:
+            print(item.text())
+            x, y, head = isfread(item.text())
+            axes.plot(x, y)
+
 
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME + ' Version ' + APPLICATION_VERSION +
@@ -140,7 +163,7 @@ class MainWindow(QMainWindow):
         levels = [logging.NOTSET, logging.DEBUG, logging.INFO,
                   logging.WARNING, logging.ERROR, logging.CRITICAL]
         if m >= 0:
-            self.logger.setLevel(levels[m])
+            logger.setLevel(levels[m])
  
     def on_quit(self) :
         # Save global settings
@@ -154,14 +177,14 @@ class MainWindow(QMainWindow):
             p = self.pos()
             s = self.size()
             CONFIG['main_window'] = {'size':(s.width(), s.height()), 'position':(p.x(), p.y())}
-            get_state(self.comboBox_1, 'comboBox_1')
+            #get_state(self.comboBox_1, 'comboBox_1')
             with open(file_name, 'w') as configfile:
                 configfile.write(json.dumps(CONFIG, indent=4))
-            self.logger.info('Configuration saved to %s' % file_name)
+            logger.info('Configuration saved to %s' % file_name)
             return True
         except :
-            self.logger.log(logging.WARNING, 'Configuration save error to %s' % file_name)
-            self.print_exception_info()
+            logger.log(logging.WARNING, 'Configuration save error to %s' % file_name)
+            print_exception_info()
             return False
         
     def restore_settings(self, file_name=CONFIG_FILE) :
@@ -172,24 +195,17 @@ class MainWindow(QMainWindow):
             CONFIG = json.loads(s)
             # Restore log level
             if 'log_level' in CONFIG:
-                v = CONFIG['log_level']
-                self.logger.setLevel(v)
-                levels = [logging.NOTSET, logging.DEBUG, logging.INFO,
-                          logging.WARNING, logging.ERROR, logging.CRITICAL, logging.CRITICAL+10]
-                for m in range(len(levels)):
-                    if v < levels[m]:
-                        break
-                self.comboBox_1.setCurrentIndex(m-1)
+                logger.setLevel(CONFIG['log_level'])
             # Restore window size and position
             if 'main_window' in CONFIG:
                 self.resize(QSize(CONFIG['main_window']['size'][0], CONFIG['main_window']['size'][1]))
                 self.move(QPoint(CONFIG['main_window']['position'][0], CONFIG['main_window']['position'][1]))
             #set_state(self.plainTextEdit_1, 'plainTextEdit_1')
-            set_state(self.comboBox_1, 'comboBox_1')
-            self.logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
+            #set_state(self.comboBox_1, 'comboBox_1')
+            logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
             return True
         except :
-            self.logger.log(logging.WARNING, 'Configuration restore error from %s' % file_name)
+            logger.log(logging.WARNING, 'Configuration restore error from %s' % file_name)
             print_exception_info()
             return False
 
@@ -197,17 +213,29 @@ class MainWindow(QMainWindow):
         t = time.strftime('%H:%M:%S')
         self.clock.setText(t)
 
-
-# Logging to the text panel
-class TextEditHandler(logging.Handler):
-    def __init__(self, widget=None):
-        logging.Handler.__init__(self)
-        self.widget = widget
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        if self.widget is not None:
-            self.widget.appendPlainText(log_entry)
+    def select_folder(self):
+        """Opens a file select dialog"""
+        # Define current dir
+        if self.folder is None:
+            self.folder = "./"
+        fileOpenDialog = QFileDialog(caption='Select folder', directory = self.folder)
+        # open file selection dialog
+        fn = fileOpenDialog.getOpenFileName()
+        # if a fn is not empty
+        if fn:
+            # Qt4 and Qt5 compatibility workaround
+            if len(fn[0]) > 1:
+                fn = fn[0]
+                # different file selected
+                if self.logFileName == fn:
+                    return
+                i = self.comboBox_2.findText(fn)
+                if i < 0:
+                    # add item to history
+                    self.comboBox_2.insertItem(-1, fn)
+                    i = 0
+                # change selection abd fire callback
+                self.comboBox_2.setCurrentIndex(i)
 
 
 if __name__ == '__main__':
