@@ -33,7 +33,7 @@ from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QFont
 import PyQt5.QtGui as QtGui
 
-import numpy as np
+import numpy
 from mplwidget import MplWidget
 import matplotlib
 
@@ -91,8 +91,8 @@ class MainWindow(QMainWindow):
         axes.set_xlabel('Time, s')
         axes.set_ylabel('Signal, V')
         axes.grid(color='k', linestyle='--')
-        x = np.arange(100.0)
-        y = np.sin(x)
+        x = numpy.arange(100.0)
+        y = numpy.sin(x)
         axes.plot(x, y)
 
         # Class members definition
@@ -140,14 +140,25 @@ class MainWindow(QMainWindow):
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
         axes.clear()
-        axes.set_xlabel('Time, s')
-        axes.set_ylabel('Signal, V')
         axes.grid(color='k', linestyle='--')
         sel = self.listWidget.selectedItems()
         for item in sel:
             print(item.text())
             x, y, head = isfread(item.text())
-            axes.plot(x, y)
+            if self.comboBox.currentIndex() == 1:
+                fy = numpy.fft.rfft(y)
+                fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
+                fp = numpy.abs(fy) ** 2
+                zero = fp[0]
+                fp[0] = 0.0
+                axes.set_title('Fourier Spectrum ')
+                axes.set_xlabel('Frequency, Hz')
+                axes.set_ylabel('Power Spectrum, a.u.')
+                axes.plot(fx, fp)
+            else:
+                axes.set_xlabel('Time, s')
+                axes.set_ylabel('Signal, V')
+                axes.plot(x, y)
         self.mplw.canvas.draw()
 
     def show_about(self):
