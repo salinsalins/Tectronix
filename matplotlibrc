@@ -1,0 +1,19 @@
+lines.linewidth   : 1.0     ## line width in points
+#lines.color       : C0      ## has no affect on plot(); see axes.prop_cycle
+
+#font.family         : sans-serif
+#font.style          : normal
+#font.weight         : normal
+#font.size           : 10.0
+
+axes.facecolor      : white   ## axes background color
+#axes.edgecolor      : black   ## axes edge color
+#axes.linewidth      : 0.8     ## edge linewidth
+axes.labelsize      : small   ## fontsize of the x any y labels
+axes.titlesize      : medium   ## fontsize of the axes title
+axes.prop_cycle    : cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])
+#axes.prop_cycle    : cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])
+                      ## color cycle for plot lines  as list of string
+                      ## colorspecs: single letter, long name, or web-style hex
+					  ## Note the use of string escapes here ('1f77b4', instead of 1f77b4)
+

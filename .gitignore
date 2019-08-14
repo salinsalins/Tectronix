@@ -4,3 +4,4 @@ __pycache__/
 *.isf
 *.png
 list.txt
+*.json
