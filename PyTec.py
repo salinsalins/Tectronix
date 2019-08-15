@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
         axes.grid(color='k', linestyle='--')
         sel = self.listWidget.selectedItems()
         for item in sel:
-            print(item.text())
+            #print(item.text())
             x, y, head = isfread(item.text())
             if self.comboBox.currentIndex() == 1:
                 fy = numpy.fft.rfft(y)
@@ -157,11 +157,26 @@ class MainWindow(QMainWindow):
                 axes.set_title('Fourier Spectrum ')
                 axes.set_xlabel('Frequency, Hz')
                 axes.set_ylabel('Power Spectrum, a.u.')
-                axes.plot(fx, fp)
+                axes.plot(fx, fp, label=item.text())
+            elif self.comboBox.currentIndex() == 2:
+                fy = numpy.fft.rfft(y)
+                fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
+                fp = numpy.abs(fy) ** 2
+                zero = fp[0]
+                fp[0] = 0.0
+                pf = fp * 0.0
+                pf[-1] = fp[-1]
+                for i in range(fx.size - 2, -1, -1):
+                    pf[i] = pf[i + 1] + fp[i]
+                axes.set_title('Cumulative Fourier Spectrum ')
+                axes.set_xlabel('Frequency, Hz')
+                axes.set_ylabel('Power, a.u.')
+                axes.plot(fx, pf, label=item.text())
             else:
                 axes.set_xlabel('Time, s')
                 axes.set_ylabel('Signal, V')
-                axes.plot(x, y)
+                axes.plot(x, y, label=item.text())
+        axes.legend()
         self.mplw.canvas.draw()
 
     def show_about(self):
