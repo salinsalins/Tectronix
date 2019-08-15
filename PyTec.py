@@ -3,7 +3,7 @@
 Created on Jul 28, 2019
 
 @author: sanin
-''' 
+'''
 
 import os.path
 import sys
@@ -40,6 +40,7 @@ import matplotlib
 from widgetstate import set_state, get_state
 from smooth import smooth
 from isfread import isfread
+import conf
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'PyTec'
@@ -52,13 +53,14 @@ UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 log_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                                       datefmt='%H:%M:%S')
+                                  datefmt='%H:%M:%S')
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(log_formatter)
 logger.addHandler(console_handler)
 
 # Global configuration dictionary
-CONFIG = {}
+
+CONFIG = conf.CONFIG
 
 
 def print_exception_info(level=logging.DEBUG):
@@ -78,22 +80,22 @@ class MainWindow(QMainWindow):
         self.resize(QSize(640, 480))
         self.move(QPoint(50, 50))
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
-        #self.setWindowIcon(QtGui.QIcon('icon.png'))
+        # self.setWindowIcon(QtGui.QIcon('icon.png'))
 
         # Create new plot widget
         self.mplw = MplWidget()
-        #self.mplw.ntb.setIconSize(QSize(18, 18))
-        #self.mplw.ntb.setFixedSize(300, 24)
+        # self.mplw.ntb.setIconSize(QSize(18, 18))
+        # self.mplw.ntb.setFixedSize(300, 24)
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
         axes = self.mplw.canvas.ax
-        axes.clear()
-        axes.set_xlabel('Time, s')
-        axes.set_ylabel('Signal, V')
-        axes.grid(color='k', linestyle='--')
-        x = numpy.arange(100.0)
-        y = numpy.sin(x)
-        axes.plot(x, y)
+        #axes.clear()
+        #axes.set_xlabel('Time, s')
+        #axes.set_ylabel('Signal, V')
+        #axes.grid(color='k', linestyle='--')
+        #x = numpy.arange(100.0)
+        #y = numpy.sin(x)
+        #axes.plot(x, y)
 
         # Class members definition
 
@@ -111,13 +113,13 @@ class MainWindow(QMainWindow):
         self.actionParameters.triggered.connect(self.show_param_pane)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
-        #self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
-        #self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
+        # self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
+        # self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
         self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
-        #self.doubleSpinBox_4.setSingleStep(0.1)
+        # self.doubleSpinBox_4.setSingleStep(0.1)
         # Clock at status bar
         self.clock = QLabel(" ")
-        #self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
+        # self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
         self.clock.setFont(QFont('Open Sans Bold', 12))
         self.statusBar().addPermanentWidget(self.clock)
 
@@ -139,7 +141,8 @@ class MainWindow(QMainWindow):
 
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
-        axes.clear()
+        if self.checkBox.isChecked():
+            axes.clear()
         axes.grid(color='k', linestyle='--')
         sel = self.listWidget.selectedItems()
         for item in sel:
@@ -188,47 +191,48 @@ class MainWindow(QMainWindow):
                   logging.WARNING, logging.ERROR, logging.CRITICAL]
         if m >= 0:
             logger.setLevel(levels[m])
- 
-    def on_quit(self) :
+
+    def on_quit(self):
         # Save global settings
         self.save_settings()
         timer.stop()
-        
-    def save_settings(self, file_name=CONFIG_FILE) :
-        global CONFIG
+
+    def save_settings(self, file_name=CONFIG_FILE):
+        #global CONFIG
         try:
             # Save window size and position
             p = self.pos()
             s = self.size()
-            CONFIG['main_window'] = {'size':(s.width(), s.height()), 'position':(p.x(), p.y())}
-            #get_state(self.comboBox_1, 'comboBox_1')
+            conf.CONFIG['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
+            get_state(self.checkBox, 'checkBox')
             with open(file_name, 'w') as configfile:
-                configfile.write(json.dumps(CONFIG, indent=4))
+                configfile.write(json.dumps(conf.CONFIG, indent=4))
             logger.info('Configuration saved to %s' % file_name)
             return True
-        except :
+        except:
             logger.log(logging.WARNING, 'Configuration save error to %s' % file_name)
             print_exception_info()
             return False
-        
-    def restore_settings(self, file_name=CONFIG_FILE) :
-        global CONFIG
-        try :
+
+    def restore_settings(self, file_name=CONFIG_FILE):
+        #global CONFIG
+        try:
             with open(file_name, 'r') as configfile:
                 s = configfile.read()
-            CONFIG = json.loads(s)
+            conf.CONFIG = json.loads(s)
             # Restore log level
-            if 'log_level' in CONFIG:
-                logger.setLevel(CONFIG['log_level'])
+            if 'log_level' in conf.CONFIG:
+                logger.setLevel(conf.CONFIG['log_level'])
             # Restore window size and position
-            if 'main_window' in CONFIG:
-                self.resize(QSize(CONFIG['main_window']['size'][0], CONFIG['main_window']['size'][1]))
-                self.move(QPoint(CONFIG['main_window']['position'][0], CONFIG['main_window']['position'][1]))
-            #set_state(self.plainTextEdit_1, 'plainTextEdit_1')
-            #set_state(self.comboBox_1, 'comboBox_1')
+            if 'main_window' in conf.CONFIG:
+                self.resize(QSize(conf.CONFIG['main_window']['size'][0], conf.CONFIG['main_window']['size'][1]))
+                self.move(QPoint(conf.CONFIG['main_window']['position'][0], conf.CONFIG['main_window']['position'][1]))
+            set_state(self.checkBox, 'checkBox')
+            # set_state(self.plainTextEdit_1, 'plainTextEdit_1')
+            # set_state(self.comboBox_1, 'comboBox_1')
             logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
             return True
-        except :
+        except:
             logger.log(logging.WARNING, 'Configuration restore error from %s' % file_name)
             print_exception_info()
             return False
@@ -242,7 +246,7 @@ class MainWindow(QMainWindow):
         # Define current dir
         if self.folder is None:
             self.folder = "./"
-        fileOpenDialog = QFileDialog(caption='Select folder', directory = self.folder)
+        fileOpenDialog = QFileDialog(caption='Select folder', directory=self.folder)
         # open file selection dialog
         fn = fileOpenDialog.getOpenFileName()
         # if a fn is not empty

@@ -4,11 +4,12 @@ from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QCheckBox
 from PyQt5.QtWidgets import QPlainTextEdit
 
+import conf
+
 
 def get_state(obj, name, config=None):
-    global CONFIG
     if config is None:
-        config = CONFIG
+        config = conf.CONFIG
     if isinstance(obj, QLabel):
         config[name] = str(obj.text())
     if isinstance(obj, QComboBox):
@@ -21,9 +22,8 @@ def get_state(obj, name, config=None):
 
 
 def set_state(obj, name, config=None):
-    global CONFIG
     if config is None:
-        config = CONFIG
+        config = conf.CONFIG
 
     if name not in config:
         return

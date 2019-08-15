@@ -42,75 +42,78 @@ mngr.window.setGeometry(wx, wy, wdx, wdy)
 ax1.clear()
 ax2.clear()
 
-listfile = open('list.txt', 'w')
-
-print('{:<17s}'.format('File'), end='; ')
-listfile.write('{:<17s}; '.format('File'))
-fr = [5e4, 5e6]
-f1 = 5e4
+f1 = 5e4*0.0
 f2 = 5e6
-print('> {:<8.1e}'.format(f1), end='; ')
-listfile.write('> {:<8.1e}; '.format(f1))
-print('> {:<8.1e}'.format(f2))
-listfile.write('> {:<8.1e}\n'.format(f2))
 
-for f in isffiles[:3]:
-    print('{:<17s}'.format(f), end='; ')
-    listfile.write('{:<17s}; '.format(f))
-    x,y,head = isfread(f)
-    #x = numpy.arange(0.0, 100., 0.01)
-    #y = numpy.sin(2.0*numpy.pi*x) + numpy.sin(2.0*numpy.pi*2.0*x) + numpy.sin(2.0*numpy.pi*20.0*x)
-    # Plot signal to ax1
-    ax1.clear()
-    ax1.set_xlabel('Time, s')
-    ax1.set_ylabel('Signal, V')
-    ax1.set_title('Track. File: ' + f)
-    ax1.grid(color='k', linestyle='--')
-    ax1.plot(x, y)
-    fy = numpy.fft.rfft(y)
-    fx = numpy.arange(len(fy)) / len(y) / (x[1]-x[0])
-    fp = numpy.abs(fy)**2
-    zero = fp[0]
-    fp[0] = 0.0
-    # Plot Fourier spectrum to ax2
-    ax2.clear()
-    ax2.set_title('Fourier Spectrum ')
-    ax2.set_xlabel('Frequency, Hz')
-    ax2.set_ylabel('Noise Power Spectrum, a.u.')
-    ax2.plot(fx, smooth(fp, window_len=1))
-    ax2.grid(color='k', linestyle='--')
-    index = fx > f1
-    np = (numpy.abs(fy)[index]**2).sum()
-    print('{:<10.1e}'.format(np), end='; ')
-    listfile.write('{:<10.1e}; '.format(np))
-    index1 = fx > f2
-    np1 = (numpy.abs(fy)[index1] ** 2).sum()
-    print('{:<10.1e}'.format(np1))
-    listfile.write('{:<10.1e}\n'.format(np1))
-    pf = fp * 0.0
-    pf[-1] = fp[-1]
-    for i in range(fx.size-2, -1, -1):
-        pf[i] = pf[i+1] + fp[i]
-    ax3.clear()
-    ax3.set_title('Cumulative Noise Power')
-    ax3.set_xlabel('Frequency, Hz')
-    ax3.set_ylabel('Noise Power, a.u.')
-    ax3.grid(color='k', linestyle='--')
-    ax3.plot(fx, pf)
-    ax4.clear()
-    ax3.set_title('Normalized Cumulative Noise Power')
-    ax4.set_xlabel('Frequency, Hz')
-    ax4.set_ylabel('Noise Power Cumulative, a.u.')
-    ax4.plot(fx, pf/pf[1])
-    ax4.grid(color='k', linestyle='--')
-    plt.tight_layout()
+with open('list.txt', 'w') as listfile:
+    print('{:<17s}'.format('File'), end='; ')
+    listfile.write('{:<17s}; '.format('File'))
+    print('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1), end='')
+    listfile.write('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1))
+    print('< {:<8.1e} [mA]'.format(f2))
+    listfile.write('< {:<8.1e} [mA]\n'.format(f2))
+
+    for fn in isffiles:
+        print('{:<17s}'.format(fn), end='; ')
+        listfile.write('{:<17s}; '.format(fn))
+        x,y,head = isfread(fn)
+        #x = numpy.arange(0.0, 100., 0.01)
+        #y = 7.0 + numpy.sin(2.0*numpy.pi*x)*2.0 + numpy.sin(2.0*numpy.pi*2.0*x)*3.0 + numpy.sin(2.0*numpy.pi*20.0*x)*5.0
+        n = float(len(y))
+        # Plot signal to ax1
+        ax1.clear()
+        ax1.set_xlabel('Time, s')
+        ax1.set_ylabel('Signal, V')
+        ax1.set_title('Track. File: ' + fn)
+        ax1.grid(color='k', linestyle='--')
+        ax1.plot(x, y)
+        fy = numpy.fft.rfft(y)
+        fx = numpy.arange(len(fy)) / n / (x[1]-x[0])
+        fp = numpy.abs(fy)**2
+        zero = fp[0]
+        fp[0] = 0.0
+        # Plot Fourier spectrum to ax2
+        ax2.clear()
+        ax2.set_title('Fourier Spectrum ')
+        ax2.set_xlabel('Frequency, Hz')
+        ax2.set_ylabel('Power Spectrum, a.u.')
+        #ax2.semilogy()
+        ax2.plot(fx, smooth(fp, window_len=1))
+        ax2.grid(color='k', linestyle='--')
+        index = numpy.logical_and(fx > f1, fx < f2)
+        np = fp[index].sum()
+        ap = numpy.sqrt(np) / n * 2.0 / 100.0 * 1000.0
+        print('{:<10.1e}'.format(ap))
+        listfile.write('{:<10.1e}\n'.format(ap))
+        #print('{:<10.1e}'.format(np), end='; ')
+        #listfile.write('{:<10.1e}; '.format(np))
+        #index1 = fx > f2
+        #np1 = (numpy.abs(fy)[index1] ** 2).sum()
+        #print('{:<10.1e}'.format(np1))
+        #listfile.write('{:<10.1e}\n'.format(np1))
+        pf = fp * 0.0
+        pf[-1] = fp[-1]
+        for i in range(fx.size-2, -1, -1):
+            pf[i] = pf[i+1] + fp[i]
+        ax3.clear()
+        ax3.set_title('Cumulative Noise Power')
+        ax3.set_xlabel('Frequency, Hz')
+        ax3.set_ylabel('Noise Power, a.u.')
+        ax3.grid(color='k', linestyle='--')
+        ax3.plot(fx, pf)
+        ax4.clear()
+        ax3.set_title('Normalized Cumulative Noise Power')
+        ax4.set_xlabel('Frequency, Hz')
+        ax4.set_ylabel('Noise Power Cumulative, a.u.')
+        ax4.plot(fx, pf/pf[1])
+        ax4.grid(color='k', linestyle='--')
+        plt.tight_layout()
+        #plt.show()
+        #plt.show(block=False)
+        plt.savefig(fn.replace(".isf", '.png'))
+        #input('PAK')
+
     #plt.show()
-    #plt.show(block=False)
-    plt.savefig(f.replace(".isf", '.png'))
-    input('PAK')
-
-#plt.show()
-listfile.close()
 
 
 
