@@ -42,8 +42,8 @@ mngr.window.setGeometry(wx, wy, wdx, wdy)
 ax1.clear()
 ax2.clear()
 
-f1 = 5e4
-f2 = 5e6
+f1 = 5e6
+f2 = 11e6
 
 with open('list.txt', 'w') as listfile:
     print('{:<17s}'.format('File'), end='; ')

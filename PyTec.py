@@ -98,13 +98,13 @@ class MainWindow(QMainWindow):
         #axes.plot(x, y)
 
         # Class members definition
+        self.folder = None
 
         # Connect signals with slots
         self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton.clicked.connect(self.erase)
-        ##self.comboBox_1.currentIndexChanged.connect(self.logLevelIndexChanged)
-        ##self.tableWidget_3.itemSelectionChanged.connect(self.table_sel_changed)
-        ##self.plainTextEdit_1.textChanged.connect(self.refresh_on)
+        self.pushButton_2.clicked.connect(self.select_folder)
+        #self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         ##self.actionOpen.triggered.connect(self.selectLogFile)
@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
         # Additional decorations
         # self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
         # self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
-        self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
+        #self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
         # self.doubleSpinBox_4.setSingleStep(0.1)
         # Clock at status bar
         self.clock = QLabel(" ")
@@ -133,6 +133,7 @@ class MainWindow(QMainWindow):
         files = os.listdir(folder)
         # Filter *.isf files
         self.files = [f for f in files if f.endswith('.isf')]
+        self.listWidget.clear()
         self.listWidget.addItems(self.files)
 
     def erase(self):
@@ -261,25 +262,29 @@ class MainWindow(QMainWindow):
         # Define current dir
         if self.folder is None:
             self.folder = "./"
-        fileOpenDialog = QFileDialog(caption='Select folder', directory=self.folder)
-        # open file selection dialog
-        fn = fileOpenDialog.getOpenFileName()
+        dialog = QFileDialog(caption='Select folder', directory=self.folder)
+        dialog.setFileMode(QFileDialog.Directory)
+        # Open file selection dialog
+        fn = dialog.getExistingDirectory()
         # if a fn is not empty
         if fn:
             # Qt4 and Qt5 compatibility workaround
             if len(fn[0]) > 1:
                 fn = fn[0]
-                # different file selected
-                if self.logFileName == fn:
-                    return
-                i = self.comboBox_2.findText(fn)
-                if i < 0:
-                    # add item to history
-                    self.comboBox_2.insertItem(-1, fn)
-                    i = 0
-                # change selection abd fire callback
-                self.comboBox_2.setCurrentIndex(i)
+            # different file selected
+            if self.folder == fn:
+                return
+            i = self.comboBox_2.findText(fn)
+            if i < 0:
+                # add item to history
+                self.comboBox_2.insertItem(-1, fn)
+                i = 0
+            # change selection abd fire callback
+            self.comboBox_2.setCurrentIndex(i)
 
+    def folder_changed(self, m):
+        self.folder = self.comboBox_2.getItem(m).text()
+        self.readfolder(self.folder)
 
 if __name__ == '__main__':
     # Create the GUI application
