@@ -42,7 +42,7 @@ mngr.window.setGeometry(wx, wy, wdx, wdy)
 ax1.clear()
 ax2.clear()
 
-f1 = 5e4*0.0
+f1 = 5e4
 f2 = 5e6
 
 with open('list.txt', 'w') as listfile:
@@ -50,8 +50,8 @@ with open('list.txt', 'w') as listfile:
     listfile.write('{:<17s}; '.format('File'))
     print('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1), end='')
     listfile.write('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1))
-    print('< {:<8.1e} [mA]'.format(f2))
-    listfile.write('< {:<8.1e} [mA]\n'.format(f2))
+    print('< {:<8.1e} Hz'.format(f2))
+    listfile.write('< {:<8.1e} Hz\n'.format(f2))
 
     for fn in isffiles:
         print('{:<17s}'.format(fn), end='; ')
