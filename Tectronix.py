@@ -42,16 +42,30 @@ mngr.window.setGeometry(wx, wy, wdx, wdy)
 ax1.clear()
 ax2.clear()
 
-f1 = 5e6
-f2 = 11e6
+f1 = 5e4
+f2 = 2e6
+f3 = 6e6
+f4 = 14e6
+
+def in_range(y, f, f1, f2):
+    n = float(len(y))
+    index = numpy.logical_and(f > f1, f < f2)
+    s = y[index].sum()
+    result = numpy.sqrt(s) / n * 2.0 / 100.0 * 1000.0
+    return result
+
 
 with open('list.txt', 'w') as listfile:
-    print('{:<17s}'.format('File'), end='; ')
+    print('{:<17s}; '.format('File'), end='')
+    print('[mA] Band 1 > {:<8.1e} '.format(f1), end='')
+    print('< {:<8.1e} Hz; '.format(f2), end='')
+    print('[mA] Band 2 > {:<8.1e}'.format(f3), end='')
+    print('< {:<8.1e} Hz'.format(f4))
     listfile.write('{:<17s}; '.format('File'))
-    print('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1), end='')
-    listfile.write('[mA] Equivalent Noise Amplitude in Band > {:<8.1e}'.format(f1))
-    print('< {:<8.1e} Hz'.format(f2))
-    listfile.write('< {:<8.1e} Hz\n'.format(f2))
+    listfile.write('[mA] Band 1 > {:<8.1e} '.format(f1))
+    listfile.write('< {:<8.1e} Hz; '.format(f2))
+    listfile.write('[mA] Band 2 > {:<8.1e} '.format(f3))
+    listfile.write('< {:<8.1e} Hz\n'.format(f4))
 
     for fn in isffiles:
         print('{:<17s}'.format(fn), end='; ')
@@ -80,17 +94,12 @@ with open('list.txt', 'w') as listfile:
         #ax2.semilogy()
         ax2.plot(fx, smooth(fp, window_len=1))
         ax2.grid(color='k', linestyle='--')
-        index = numpy.logical_and(fx > f1, fx < f2)
-        np = fp[index].sum()
-        ap = numpy.sqrt(np) / n * 2.0 / 100.0 * 1000.0
+        ap = in_range(fp, fx, f1, f2)
+        print('{:<10.1e}; '.format(ap), end='')
+        listfile.write('{:<10.1e}; '.format(ap))
+        ap = in_range(fp, fx, f3, f4)
         print('{:<10.1e}'.format(ap))
         listfile.write('{:<10.1e}\n'.format(ap))
-        #print('{:<10.1e}'.format(np), end='; ')
-        #listfile.write('{:<10.1e}; '.format(np))
-        #index1 = fx > f2
-        #np1 = (numpy.abs(fy)[index1] ** 2).sum()
-        #print('{:<10.1e}'.format(np1))
-        #listfile.write('{:<10.1e}\n'.format(np1))
         pf = fp * 0.0
         pf[-1] = fp[-1]
         for i in range(fx.size-2, -1, -1):
@@ -112,12 +121,7 @@ with open('list.txt', 'w') as listfile:
         #plt.show(block=False)
         plt.savefig(fn.replace(".isf", '.png'))
         #input('PAK')
-
     #plt.show()
-
-
-
-
 
 if __name__ == "__main__":
 

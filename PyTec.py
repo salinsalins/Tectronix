@@ -104,13 +104,9 @@ class MainWindow(QMainWindow):
         self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton.clicked.connect(self.erase)
         self.pushButton_2.clicked.connect(self.select_folder)
-        #self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
+        self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
-        ##self.actionOpen.triggered.connect(self.selectLogFile)
-        self.actionPlot.triggered.connect(self.show_main_pane)
-        self.actionLog.triggered.connect(self.show_log_pane)
-        self.actionParameters.triggered.connect(self.show_param_pane)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
         # self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
@@ -126,15 +122,21 @@ class MainWindow(QMainWindow):
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
         self.restore_settings()
-        self.read_folder('./')
+        #self.read_folder('./')
 
     def read_folder(self, folder):
         # All files in the folder
         files = os.listdir(folder)
         # Filter *.isf files
         self.files = [f for f in files if f.endswith('.isf')]
+        self.listWidget.setUpdatesEnabled(False)
+        self.listWidget.blockSignals(True)
         self.listWidget.clear()
         self.listWidget.addItems(self.files)
+        self.listWidget.blockSignals(False)
+        self.listWidget.setUpdatesEnabled(True)
+
+        self.erase()
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -184,30 +186,6 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, 'About', APPLICATION_NAME + ' Version ' + APPLICATION_VERSION +
                                 '\nUser interface programm to control Negative Ion Source stand.', QMessageBox.Ok)
 
-    def show_main_pane(self):
-        self.stackedWidget.setCurrentIndex(0)
-        self.actionPlot.setChecked(True)
-        self.actionLog.setChecked(False)
-        self.actionParameters.setChecked(False)
-
-    def show_log_pane(self):
-        self.stackedWidget.setCurrentIndex(1)
-        self.actionPlot.setChecked(False)
-        self.actionLog.setChecked(True)
-        self.actionParameters.setChecked(False)
-
-    def show_param_pane(self):
-        self.stackedWidget.setCurrentIndex(2)
-        self.actionPlot.setChecked(False)
-        self.actionLog.setChecked(False)
-        self.actionParameters.setChecked(True)
-
-    def log_level_changed(self, m):
-        levels = [logging.NOTSET, logging.DEBUG, logging.INFO,
-                  logging.WARNING, logging.ERROR, logging.CRITICAL]
-        if m >= 0:
-            logger.setLevel(levels[m])
-
     def on_quit(self):
         # Save global settings
         self.save_settings()
@@ -221,6 +199,7 @@ class MainWindow(QMainWindow):
             s = self.size()
             conf.CONFIG['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
             get_state(self.checkBox, 'checkBox')
+            get_state(self.comboBox_2, 'comboBox_2')
             with open(file_name, 'w') as configfile:
                 configfile.write(json.dumps(conf.CONFIG, indent=4))
             logger.info('Configuration saved to %s' % file_name)
@@ -244,8 +223,7 @@ class MainWindow(QMainWindow):
                 self.resize(QSize(conf.CONFIG['main_window']['size'][0], conf.CONFIG['main_window']['size'][1]))
                 self.move(QPoint(conf.CONFIG['main_window']['position'][0], conf.CONFIG['main_window']['position'][1]))
             set_state(self.checkBox, 'checkBox')
-            # set_state(self.plainTextEdit_1, 'plainTextEdit_1')
-            # set_state(self.comboBox_1, 'comboBox_1')
+            set_state(self.comboBox_2, 'comboBox_2')
             logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
             return True
         except:
@@ -277,14 +255,19 @@ class MainWindow(QMainWindow):
             i = self.comboBox_2.findText(fn)
             if i < 0:
                 # add item to history
+                self.comboBox_2.setUpdatesEnabled(False)
+                self.comboBox_2.blockSignals(True)
                 self.comboBox_2.insertItem(-1, fn)
+                self.comboBox_2.blockSignals(False)
+                self.comboBox_2.setUpdatesEnabled(True)
                 i = 0
             # change selection abd fire callback
             self.comboBox_2.setCurrentIndex(i)
 
     def folder_changed(self, m):
-        self.folder = self.comboBox_2.getItem(m).text()
-        self.readfolder(self.folder)
+        folder = self.comboBox_2.currentText()
+        #self.folder = self.comboBox_2.itemText(m)
+        self.read_folder(folder)
 
 if __name__ == '__main__':
     # Create the GUI application
