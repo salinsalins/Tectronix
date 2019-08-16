@@ -105,11 +105,11 @@ class MainWindow(QMainWindow):
         self.pushButton.clicked.connect(self.erase)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
+        self.comboBox.currentIndexChanged.connect(self.processing_changed)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
-        # self.pushButton_2.setStyleSheet('QPushButton {background-color: red}')
         # self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
         #self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
         # self.doubleSpinBox_4.setSingleStep(0.1)
@@ -145,18 +145,18 @@ class MainWindow(QMainWindow):
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
         if self.checkBox.isChecked():
-            axes.clear()
+            self.erase()
         axes.grid(color='k', linestyle='--')
         sel = self.listWidget.selectedItems()
         for item in sel:
             #print(item.text())
             x, y, head = isfread(item.text())
+            fy = numpy.fft.rfft(y)
+            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
+            fp = numpy.abs(fy) ** 2
+            zero = fp[0]
+            fp[0] = 0.0
             if self.comboBox.currentIndex() == 1:
-                fy = numpy.fft.rfft(y)
-                fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-                fp = numpy.abs(fy) ** 2
-                zero = fp[0]
-                fp[0] = 0.0
                 axes.set_title('Fourier Spectrum ')
                 axes.set_xlabel('Frequency, Hz')
                 axes.set_ylabel('Power Spectrum, a.u.')
@@ -175,10 +175,19 @@ class MainWindow(QMainWindow):
                 axes.set_xlabel('Frequency, Hz')
                 axes.set_ylabel('Power, a.u.')
                 axes.plot(fx, pf, label=item.text())
-            else:
+            elif self.comboBox.currentIndex() == 0:
                 axes.set_xlabel('Time, s')
                 axes.set_ylabel('Signal, V')
                 axes.plot(x, y, label=item.text())
+            else:
+                try:
+                    evalsrt = self.comboBox.currentText()
+                    (xp, yp) = eval(evalsrt)
+                    axes.set_xlabel('X value, a.u.')
+                    axes.set_ylabel('Processed Signal, a.u.')
+                    axes.plot(xp, yp, label=item.text())
+                except:
+                    logger.log(logging.WARNING, 'eval() ERROR in %s' % evalsrt)
         axes.legend()
         self.mplw.canvas.draw()
 
@@ -200,6 +209,7 @@ class MainWindow(QMainWindow):
             conf.CONFIG['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
             get_state(self.checkBox, 'checkBox')
             get_state(self.comboBox_2, 'comboBox_2')
+            get_state(self.comboBox, 'comboBox')
             with open(file_name, 'w') as configfile:
                 configfile.write(json.dumps(conf.CONFIG, indent=4))
             logger.info('Configuration saved to %s' % file_name)
@@ -224,6 +234,7 @@ class MainWindow(QMainWindow):
                 self.move(QPoint(conf.CONFIG['main_window']['position'][0], conf.CONFIG['main_window']['position'][1]))
             set_state(self.checkBox, 'checkBox')
             set_state(self.comboBox_2, 'comboBox_2')
+            set_state(self.comboBox, 'comboBox')
             logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
             return True
         except:
@@ -268,6 +279,11 @@ class MainWindow(QMainWindow):
         folder = self.comboBox_2.currentText()
         #self.folder = self.comboBox_2.itemText(m)
         self.read_folder(folder)
+
+    def processing_changed(self, m):
+        self.erase()
+        self.list_selection_changed()
+
 
 if __name__ == '__main__':
     # Create the GUI application
