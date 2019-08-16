@@ -57,19 +57,19 @@ def in_range(y, f, f1, f2):
 
 
 with open('list.txt', 'w') as listfile:
-    print('{:<17s}; '.format('File'), end='')
+    print('{:<17s}; {:<17s}; '.format('File', 'Current, mA'), end='')
     for b in fbands:
         print('[mA] > {:<8.1e} '.format(b[0]), end='')
         print('< {:<8.1e} Hz; '.format(b[1]), end='')
     print('')
-    listfile.write('{:<17s}; '.format('File'))
+    listfile.write('{:<17s}; {:<17s}; '.format('File', 'Current, mA'))
     for b in fbands:
         listfile.write('[mA] > {:<8.1e} '.format(b[0]))
         listfile.write('< {:<8.1e} Hz; '.format(b[1]))
     listfile.write('\n'.format(b[1]))
 
     for fn in isffiles:
-        print('{:<17s}'.format(fn), end='; ')
+        print('{:<17s}; '.format(fn), end='')
         listfile.write('{:<17s}; '.format(fn))
         x,y,head = isfread(fn)
         #x = numpy.arange(0.0, 100., 0.01)
@@ -95,10 +95,13 @@ with open('list.txt', 'w') as listfile:
         #ax2.semilogy()
         ax2.plot(fx, smooth(fp, window_len=1))
         ax2.grid(color='k', linestyle='--')
+        current = numpy.sqrt(zero)/n/100.0*1000.0
+        print('{:<10.2f}; '.format(current), end='')
+        listfile.write('{:<10.2f}; '.format(current))
         for b in fbands:
             ap = in_range(fp, fx, b[0], b[1])
-            print('{:<10.1e}; '.format(ap), end='')
-            listfile.write('{:<10.1e}; '.format(ap))
+            print('{:<10.2f}; '.format(ap), end='')
+            listfile.write('{:<10.2f}; '.format(ap))
         print('')
         listfile.write('\n')
         pf = fp * 0.0
