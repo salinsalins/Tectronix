@@ -38,6 +38,9 @@ def set_state(obj, name, config=None):
         obj.blockSignals(False)
         obj.setUpdatesEnabled(True)
         obj.setCurrentIndex(config[name]['index'])
+        # Force index change event in the case of index=0
+        if config[name]['index'] == 0:
+            obj.currentIndexChanged.emit(0)
     if isinstance(obj, QCheckBox):
         obj.setChecked(config[name])
     if isinstance(obj, QPlainTextEdit):

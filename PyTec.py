@@ -147,19 +147,20 @@ class MainWindow(QMainWindow):
         if self.checkBox.isChecked():
             self.erase()
         axes.grid(color='k', linestyle='--')
+        axes.set_title(self.folder)
         sel = self.listWidget.selectedItems()
         for item in sel:
             #print(item.text())
-            x, y, head = isfread(item.text())
+            full_name = os.path.join(self.folder, item.text())
+            x, y, head = isfread(full_name)
             fy = numpy.fft.rfft(y)
             fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
             fp = numpy.abs(fy) ** 2
             zero = fp[0]
             fp[0] = 0.0
             if self.comboBox.currentIndex() == 1:
-                axes.set_title('Fourier Spectrum ')
                 axes.set_xlabel('Frequency, Hz')
-                axes.set_ylabel('Power Spectrum, a.u.')
+                axes.set_ylabel('Spectral Power, a.u.')
                 axes.plot(fx, fp, label=item.text())
             elif self.comboBox.currentIndex() == 2:
                 fy = numpy.fft.rfft(y)
@@ -171,9 +172,8 @@ class MainWindow(QMainWindow):
                 pf[-1] = fp[-1]
                 for i in range(fx.size - 2, -1, -1):
                     pf[i] = pf[i + 1] + fp[i]
-                axes.set_title('Cumulative Fourier Spectrum ')
                 axes.set_xlabel('Frequency, Hz')
-                axes.set_ylabel('Power, a.u.')
+                axes.set_ylabel('Cumulative Power, a.u.')
                 axes.plot(fx, pf, label=item.text())
             elif self.comboBox.currentIndex() == 0:
                 axes.set_xlabel('Time, s')
@@ -181,10 +181,10 @@ class MainWindow(QMainWindow):
                 axes.plot(x, y, label=item.text())
             else:
                 try:
-                    evalsrt = self.comboBox.currentText()
-                    (xp, yp) = eval(evalsrt)
                     axes.set_xlabel('X value, a.u.')
                     axes.set_ylabel('Processed Signal, a.u.')
+                    evalsrt = self.comboBox.currentText()
+                    (xp, yp) = eval(evalsrt)
                     axes.plot(xp, yp, label=item.text())
                 except:
                     logger.log(logging.WARNING, 'eval() ERROR in %s' % evalsrt)
@@ -233,8 +233,8 @@ class MainWindow(QMainWindow):
                 self.resize(QSize(conf.CONFIG['main_window']['size'][0], conf.CONFIG['main_window']['size'][1]))
                 self.move(QPoint(conf.CONFIG['main_window']['position'][0], conf.CONFIG['main_window']['position'][1]))
             set_state(self.checkBox, 'checkBox')
-            set_state(self.comboBox_2, 'comboBox_2')
             set_state(self.comboBox, 'comboBox')
+            set_state(self.comboBox_2, 'comboBox_2')
             logger.log(logging.INFO, 'Configuration restored from %s' % file_name)
             return True
         except:
@@ -278,6 +278,7 @@ class MainWindow(QMainWindow):
     def folder_changed(self, m):
         folder = self.comboBox_2.currentText()
         #self.folder = self.comboBox_2.itemText(m)
+        self.folder = folder
         self.read_folder(folder)
 
     def processing_changed(self, m):
