@@ -46,6 +46,7 @@ f1 = 5e4
 f2 = 2e6
 f3 = 6e6
 f4 = 14e6
+fbands = [(f1, f2), (f3, f4), (5e4, 5e7)]
 
 def in_range(y, f, f1, f2):
     n = float(len(y))
@@ -57,15 +58,15 @@ def in_range(y, f, f1, f2):
 
 with open('list.txt', 'w') as listfile:
     print('{:<17s}; '.format('File'), end='')
-    print('[mA] Band 1 > {:<8.1e} '.format(f1), end='')
-    print('< {:<8.1e} Hz; '.format(f2), end='')
-    print('[mA] Band 2 > {:<8.1e}'.format(f3), end='')
-    print('< {:<8.1e} Hz'.format(f4))
+    for b in fbands:
+        print('[mA] > {:<8.1e} '.format(b[0]), end='')
+        print('< {:<8.1e} Hz; '.format(b[1]), end='')
+    print('')
     listfile.write('{:<17s}; '.format('File'))
-    listfile.write('[mA] Band 1 > {:<8.1e} '.format(f1))
-    listfile.write('< {:<8.1e} Hz; '.format(f2))
-    listfile.write('[mA] Band 2 > {:<8.1e} '.format(f3))
-    listfile.write('< {:<8.1e} Hz\n'.format(f4))
+    for b in fbands:
+        listfile.write('[mA] > {:<8.1e} '.format(b[0]))
+        listfile.write('< {:<8.1e} Hz; '.format(b[1]))
+    listfile.write('\n'.format(b[1]))
 
     for fn in isffiles:
         print('{:<17s}'.format(fn), end='; ')
@@ -94,12 +95,12 @@ with open('list.txt', 'w') as listfile:
         #ax2.semilogy()
         ax2.plot(fx, smooth(fp, window_len=1))
         ax2.grid(color='k', linestyle='--')
-        ap = in_range(fp, fx, f1, f2)
-        print('{:<10.1e}; '.format(ap), end='')
-        listfile.write('{:<10.1e}; '.format(ap))
-        ap = in_range(fp, fx, f3, f4)
-        print('{:<10.1e}'.format(ap))
-        listfile.write('{:<10.1e}\n'.format(ap))
+        for b in fbands:
+            ap = in_range(fp, fx, b[0], b[1])
+            print('{:<10.1e}; '.format(ap), end='')
+            listfile.write('{:<10.1e}; '.format(ap))
+        print('')
+        listfile.write('\n')
         pf = fp * 0.0
         pf[-1] = fp[-1]
         for i in range(fx.size-2, -1, -1):
