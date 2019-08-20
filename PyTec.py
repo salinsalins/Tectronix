@@ -32,6 +32,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QFont
 import PyQt5.QtGui as QtGui
+from PyQt5 import QtNetwork
 
 import numpy
 from mplwidget import MplWidget
@@ -101,11 +102,11 @@ class MainWindow(QMainWindow):
         self.folder = None
 
         # Connect signals with slots
-        self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton.clicked.connect(self.erase)
+        self.comboBox.currentIndexChanged.connect(self.processing_changed)
+        self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
-        self.comboBox.currentIndexChanged.connect(self.processing_changed)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
@@ -286,6 +287,14 @@ class MainWindow(QMainWindow):
         self.erase()
         #self.list_selection_changed()
 
+    def data_arrived(self):
+        print('Data has arrived')
+        data, host, port = socket.readDatagram(512)
+        print(data)
+        print('From:')
+        print(host.toString())
+        print(port)
+
 
 if __name__ == '__main__':
     # Create the GUI application
@@ -299,6 +308,10 @@ if __name__ == '__main__':
     timer = QTimer()
     timer.timeout.connect(dmw.timer_handler)
     timer.start(1000)
+    # Start UDP server
+    socket = QtNetwork.QUdpSocket()
+    socket.bind(7755)
+    socket.readyRead.connect(dmw.data_arrived)
     # Start the Qt main loop execution, exiting from this script
     # with the same return code of Qt application
     sys.exit(app.exec_())

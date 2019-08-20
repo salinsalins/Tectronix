@@ -55,7 +55,6 @@ def in_range(y, f, f1, f2):
     result = numpy.sqrt(s) / n * 2.0 / 100.0 * 1000.0
     return result
 
-
 with open('list.txt', 'w') as listfile:
     print('{:<17s}; {:<17s}; '.format('File', 'Current, mA'), end='')
     for b in fbands:
