@@ -294,6 +294,12 @@ class MainWindow(QMainWindow):
         print('From:')
         print(host.toString())
         print(port)
+        # Sending back
+        addr = QtNetwork.QHostAddress.LocalHost
+        status = socket.writeDatagram(b'Hello there', host, port)
+        print('Sending back', status)
+        #status = socket.writeDatagram(b'Hello', addr, 7755)
+        #print('Sending to 7755', status)
 
 
 if __name__ == '__main__':
