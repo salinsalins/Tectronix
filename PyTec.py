@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
 
     def erase(self):
         self.mplw.canvas.ax.clear()
-        self.list_selection_changed()
+        ###self.list_selection_changed()
         #self.mplw.canvas.draw()
 
     def list_selection_changed(self):
