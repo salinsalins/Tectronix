@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
 
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME + ' Version ' + APPLICATION_VERSION +
-                                '\nUser interface programm to control Negative Ion Source stand.', QMessageBox.Ok)
+                                '\nTextroix *.isf data file plot utility.', QMessageBox.Ok)
 
     def on_quit(self):
         # Save global settings
