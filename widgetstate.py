@@ -7,9 +7,13 @@ from PyQt5.QtWidgets import QPlainTextEdit
 import conf
 
 
-def get_state(obj, name, config=None):
+def get_state(obj, *args, config=None):
     if config is None:
         config = conf.CONFIG
+    if len(args) <= 0:
+        name = obj.objectName
+    else:
+        name = args[0]
     if isinstance(obj, QLabel):
         config[name] = str(obj.text())
     if isinstance(obj, QComboBox):
@@ -21,9 +25,14 @@ def get_state(obj, name, config=None):
         config[name] = obj.toPlainText()
 
 
-def set_state(obj, name, config=None):
+def set_state(obj, *args, config=None):
     if config is None:
         config = conf.CONFIG
+
+    if len(args) <= 0:
+        name = obj.objectName
+    else:
+        name = args[0]
 
     if name not in config:
         return

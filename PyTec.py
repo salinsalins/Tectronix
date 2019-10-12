@@ -38,10 +38,14 @@ import numpy
 from mplwidget import MplWidget
 import matplotlib
 
-from widgetstate import set_state, get_state
 from smooth import smooth
 from isfread import isfread
+
+from widgetstate import set_state, get_state
+# Global configuration dictionary
 import conf
+#from conf import CONFIG
+#CONFIG = conf.CONFIG
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'PyTec'
@@ -59,9 +63,6 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(log_formatter)
 logger.addHandler(console_handler)
 
-# Global configuration dictionary
-
-CONFIG = conf.CONFIG
 
 
 def print_exception_info(level=logging.DEBUG):
