@@ -3,6 +3,8 @@
 Created on Aug 23, 2023
 
 @author: sanin
+
+s='s=%r;print(s%%s)';print(s%s)
 """
 import datetime
 import http.client
@@ -41,7 +43,8 @@ if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
-from mplwidget import MplWidget
+# from mplwidget import MplWidget
+from pyqtgraphwidget import MplWidget
 from isfread import isfread
 
 ORGANIZATION_NAME = 'BINP'
@@ -130,7 +133,7 @@ class MainWindow(QMainWindow):
         self.move(QPoint(50, 50))
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
-        restore_settings(self, file_name=CONFIG_FILE)
+        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
         self.folder = self.config.get('folder', 'D:/tec_data')
         self.make_data_folder()
         # Create new plot widget
@@ -143,6 +146,7 @@ class MainWindow(QMainWindow):
         self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
+        self.pushButton_3.clicked.connect(self.send_command_pressed)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
@@ -159,6 +163,7 @@ class MainWindow(QMainWindow):
         self.read_folder(self.folder)
         self.ip = self.config.get('ip', "192.168.1.222")
         self.connection = tec_connect(self.ip)
+        self.id = tec_send_command(self.connection, '*idn?')
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
@@ -182,6 +187,12 @@ class MainWindow(QMainWindow):
         self.mplw.canvas.ax.clear()
         ###self.list_selection_changed()
         # self.mplw.canvas.draw()
+
+    def send_command_pressed(self):
+        txt = self.lineEdit_2.text()
+        rsp = tec_send_command(self.connection, txt)
+        # print(rsp)
+        self.label_6.setText(rsp)
 
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
@@ -240,7 +251,7 @@ class MainWindow(QMainWindow):
 
     def on_quit(self):
         # Save global settings
-        save_settings(self, file_name=CONFIG_FILE)
+        save_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
         timer.stop()
         self.connection.close()
 
