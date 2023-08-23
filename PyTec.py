@@ -9,16 +9,12 @@ import os.path
 import sys
 import json
 import logging
-import zipfile
 import time
 
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtWidgets import QTableWidget
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QComboBox
