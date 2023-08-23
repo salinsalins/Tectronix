@@ -42,7 +42,10 @@ def isfread(filename):
         n3 = string.find(b'"', n2 + 1)
         return string[n2+1:n3].decode('ascii')
 
-    fid = open(filename, 'rb')
+    if isinstance(filename, str):
+        fid = open(filename, 'rb')
+    else:
+        fid = filename
     hdata = fid.read(511);  # read first 511 bytes
     head = {'bytenum': getnum(hdata, b'BYT_NR'),
             'bitnum': getnum(hdata, b'BIT_NR'),
