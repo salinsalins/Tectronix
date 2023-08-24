@@ -122,64 +122,64 @@ def tec_get_data(conn, chan_number):
 
 class TectronixTDS:
     default = {
-        '*LRN?': '',
+        # '*LRN?': '',
         'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
         'ACQuire:MODe': 'SAMple',  # PEKdetect | AVErage,
         'ACQuire:NUMACq?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
-        'BUSY?': '',  # 0 | 1
-        'CH1:BANdwidth': '',
-        'CH1:COUPling': '',
-        'CH1:DESKew': '0.0',
-        'CH1:IMPedance': '',
-        'CH1:OFFSet': '',
-        'CH1:POSition': '',
-        'CH1:PRObe?': '',
+        # 'BUSY?': '',  # 0 | 1
+        # 'CH1:BANdwidth': '',
+        # 'CH1:COUPling': '',
+        # 'CH1:DESKew': '0.0',
+        # 'CH1:IMPedance': '',
+        # 'CH1:OFFSet': '',
+        # 'CH1:POSition': '',
+        # 'CH1:PRObe?': '',
         'CH1:SCAle': '',
-        'CH2:BANdwidth': '',
-        'CH2:COUPling': '',
-        'CH2:DESKew': '0.0',
-        'CH2:IMPedance': '',
-        'CH2:OFFSet': '',
-        'CH2:POSition': '',
-        'CH2:PRObe?': '',
+        # 'CH2:BANdwidth': '',
+        # 'CH2:COUPling': '',
+        # 'CH2:DESKew': '0.0',
+        # 'CH2:IMPedance': '',
+        # 'CH2:OFFSet': '',
+        # 'CH2:POSition': '',
+        # 'CH2:PRObe?': '',
         'CH2:SCAle': '',
-        'CH3:BANdwidth': '',
-        'CH3:COUPling': '',
-        'CH3:DESKew': '0.0',
-        'CH3:IMPedance': '',
-        'CH3:OFFSet': '',
-        'CH3:POSition': '',
-        'CH3:PRObe?': '',
+        # 'CH3:BANdwidth': '',
+        # 'CH3:COUPling': '',
+        # 'CH3:DESKew': '0.0',
+        # 'CH3:IMPedance': '',
+        # 'CH3:OFFSet': '',
+        # 'CH3:POSition': '',
+        # 'CH3:PRObe?': '',
         'CH3:SCAle': '',
-        'CH4:BANdwidth': '',
-        'CH4:COUPling': '',
-        'CH4:DESKew': '0.0',
-        'CH4:IMPedance': '',
-        'CH4:OFFSet': '',
-        'CH4:POSition': '',
-        'CH4:PRObe?': '',
+        # 'CH4:BANdwidth': '',
+        # 'CH4:COUPling': '',
+        # 'CH4:DESKew': '0.0',
+        # 'CH4:IMPedance': '',
+        # 'CH4:OFFSet': '',
+        # 'CH4:POSition': '',
+        # 'CH4:PRObe?': '',
         'CH4:SCAle': '',
-        'DATE': '',
-        'HORizontal:DELay:TIMe?': '',
+        # 'DATE': '',
+        # 'HORizontal:DELay:TIMe?': '',
         'HORizontal:MAIn:SCAle': '',  # sec / div
         'HORizontal:TRIGger:POSition': '',
         'ID?': '',
-        'SELect?': '',
+        # 'SELect?': '',
         'SELect:CH1': '',  # 1 | 0 | ON | OFF
         'SELect:CH2': '',  # 1 | 0 | ON | OFF
         'SELect:CH3': '',  # 1 | 0 | ON | OFF
         'SELect:CH4': '',  # 1 | 0 | ON | OFF
         'TIMe': '',
         'TRIGger': '',
-        'TRIGger:MAIn:EDGE:COUPling': '',
-        'TRIGger:MAIn:EDGE:SLOpe': '',
-        'TRIGger:MAIn:EDGE:SOUrce': '',
-        'TRIGger:MAIn:LEVel': '',
-        'TRIGger:MAIn:MODe': '',  # AUTO | NORMAL
-        'TRIGger:MAIn:TYPe': '',
+        # 'TRIGger:MAIn:EDGE:COUPling': '',
+        # 'TRIGger:MAIn:EDGE:SLOpe': '',
+        # 'TRIGger:MAIn:EDGE:SOUrce': '',
+        # 'TRIGger:MAIn:LEVel': '',
+        # 'TRIGger:MAIn:MODe': '',  # AUTO | NORMAL
+        # 'TRIGger:MAIn:TYPe': '',
         'TRIGger:STATE?': '',  # ARMED or not
-        'VERBose': '0',
+        # 'VERBose': '0',
         '*idn?': ''
     }
 
@@ -199,15 +199,15 @@ class TectronixTDS:
             self.connection = tec_connect(self.ip)
         except:
             raise
+        self.tec_type = ''
+        self.last_aq = ''
         self.set_config()
+        self.logger.debug('%s at %s has been initialized %s', self.tec_type, self.ip, self.last_aq)
 
     def send_command(self, cmd):
-        # result = tec_send_command(self.connection, cmd)
-        # if cmd in self.config:
-        #     self.config[cmd] = result
-        # if cmd[:-1] in self.config:
-        #     self.config[cmd[:-1] = result
-        return tec_send_command(self.connection, cmd)
+        result = tec_send_command(self.connection, cmd)
+        # self.logger.debug('%s -> %s', cmd, result)
+        return result
 
     def get_data(self, ch_n):
         return tec_get_data(self.connection, ch_n)
@@ -228,10 +228,74 @@ class TectronixTDS:
                 else:
                     key1 = key + "?"
                 self.config[key] = self.send_command(key1)
-                self.logger.debug('Read %s = %s', key, self.config[key])
+                # self.logger.debug('Read %s = %s', key, self.config[key])
             else:
                 self.send_command(key + ' ' + self.config[key])
-                self.logger.debug('Set  %s = %s', key, self.config[key])
+                # self.logger.debug('Set  %s = %s', key, self.config[key])
+
+        t = self.config['*idn?'].split(',')
+        self.tec_type = ' '.join(t[0:2])
+        self.last_aq = self.send_command('ACQuire:NUMACq?')
+        self.config['ACQuire:NUMACq?'] = self.last_aq
+
+    def is_aq_finished(self):
+        num_aq = self.send_command('ACQuire:NUMACq?')
+        if num_aq != self.last_aq:
+            self.logger.debug('New shot detected %s %s', num_aq, self.last_aq)
+            self.last_aq = num_aq
+            return True
+        return False
+
+    def start_aq(self):
+        self.send_command('ACQuire:STATE 0')
+        self.send_command('ACQuire:STATE 1')
+        self.last_aq = self.send_command('ACQuire:NUMACq?')
+        st = self.send_command('TRIGger:STATE?')
+        if st.upper().startswith('ARMED'):
+            return True
+        return False
+
+    def stop_aq(self):
+        self.send_command('ACQuire:STATE 0')
+        # st = self.send_command('TRIGger:STATE?')
+        # if st.upper().startswith('ARMED'):
+        #     return False
+        return True
+
+    def is_aq_in_progeress(self):
+        st = self.send_command('BUSY?')
+        if st.upper().startswith('1'):
+            return True
+        return False
+
+    def read_plots(self):
+        plots = {}
+        sel = self.send_command('SEL?').split(';')
+        for i in range(4):
+            if sel[i] == '1':
+            # if self.send_command('SELect:CH%s?'%ch) == '1':
+                x, y ,h = tec_get_data(self.connection, i)
+                plots[i] = {'x': x, 'y': y}
+        return plots
+
+class PlotItem:
+    colors = ['r', 'g', 'b', 'y', 'c', 'n']
+    color_index = 0
+    label_index = 0
+    def __init__(self, x, y, label=None, color=None):
+        self.x = x
+        self.y = y
+        self.label = label
+        if label is None:
+            self.label = 'Label%s' % PlotItem.label_index
+            PlotItem.label_index += 1
+        self.color = color
+        if color is None:
+            self.color = self.colors[PlotItem.color_index]
+            PlotItem.color_index += 1
+            if PlotItem.color_index >= len(PlotItem.colors):
+                PlotItem.color_index = 0
+
 
 
 class MainWindow(QMainWindow):
@@ -276,9 +340,14 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.clock)
         #
         self.read_folder(self.folder)
-        self.ip = self.config.get('ip', "192.168.1.222")
-        self.connection = tec_connect(self.ip)
-        self.id = tec_send_command(self.connection, '*idn?')
+        devices = self.config.get('devices', {})
+        if len(devices) <= 0:
+            self.logger.error("No Oscilloscopes defined in config")
+            exit(-1)
+        self.devices = {}
+        for d in devices:
+            self.devices[d] = TectronixTDS(ip=d, config=devices[d])
+            self.devices[d].start_aq()
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
@@ -305,7 +374,7 @@ class MainWindow(QMainWindow):
 
     def send_command_pressed(self):
         txt = self.lineEdit_2.text()
-        rsp = tec_send_command(self.connection, txt)
+        rsp = list(self.devices.values())[0].send_command(txt)
         # print(rsp)
         self.label_6.setText(rsp)
 
@@ -359,6 +428,57 @@ class MainWindow(QMainWindow):
         axes.legend()
         self.mplw.canvas.draw()
 
+    def plot_data(self, data):
+        axes = self.mplw.canvas.ax
+        if self.checkBox.isChecked():
+            self.erase()
+        # axes.grid(color='k', linestyle='--')
+        axes.set_title(self.folder)
+        for item in data:
+            self.plot_trace(item)
+        # axes.legend()
+        self.mplw.canvas.draw()
+
+    def plot_trace(self, item):
+        axes = self.mplw.canvas.ax
+        x = item.x
+        y = item.y
+        if self.comboBox.currentIndex() == 0:
+            axes.set_xlabel('Time, s')
+            axes.set_ylabel('Signal, V')
+            axes.plot(x, y, label=item.label, color=item.color)
+            return
+        if self.comboBox.currentIndex() == 1:
+            fy = numpy.fft.rfft(y)
+            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
+            fp = numpy.abs(fy) ** 2
+            fp[0] = 0.0
+            axes.set_xlabel('Frequency, Hz')
+            axes.set_ylabel('Spectral Power, a.u.')
+            axes.plot(fx, fp, label=item.label, color=item.color)
+        elif self.comboBox.currentIndex() == 2:
+            fy = numpy.fft.rfft(y)
+            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
+            fp = numpy.abs(fy) ** 2
+            fp[0] = 0.0
+            pf = fp * 0.0
+            pf[-1] = fp[-1]
+            for i in range(fx.size - 2, -1, -1):
+                pf[i] = pf[i + 1] + fp[i]
+            axes.set_xlabel('Frequency, Hz')
+            axes.set_ylabel('Cumulative Power, a.u.')
+            axes.plot(fx, pf, label=item.label, color=item.color)
+        else:
+            evalsrt = ''
+            try:
+                axes.set_xlabel('X value, a.u.')
+                axes.set_ylabel('Processed Signal, a.u.')
+                evalsrt = self.comboBox.currentText()
+                (xp, yp) = eval(evalsrt)
+                axes.plot(xp, yp, label=item.label, color=item.color)
+            except:
+                self.logger.warning('eval() ERROR in %s' % evalsrt)
+
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME +
                                 ' Version ' + APPLICATION_VERSION +
@@ -368,11 +488,20 @@ class MainWindow(QMainWindow):
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
         timer.stop()
-        self.connection.close()
+        for d in self.devices.values():
+            d.connection.close()
 
     def timer_handler(self):
         t = time.strftime('%H:%M:%S')
         self.clock.setText(t)
+        for d in self.devices:
+            if self.devices[d].is_aq_finished():
+                data = []
+                plots = self.devices[d].read_plots()
+                for p in plots.values():
+                    data.append(PlotItem(p['x'], p['y']))
+                self.plot_data(data)
+                self.devices[d].start_aq()
 
     def select_folder(self):
         """Opens a file select dialog"""
@@ -437,9 +566,7 @@ class MainWindow(QMainWindow):
             return False
 
 
-t = TectronixTDS()
-
-if __name__ == 's__main__':
+if __name__ == '__main__':
     # Create the GUI application
     app = QApplication(sys.argv)
     # Instantiate the main window
