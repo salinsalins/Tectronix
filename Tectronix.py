@@ -282,6 +282,25 @@ class TectronixTDS:
                 self.isf[i] = isf
         return self.plots
 
+    def enable_channel(self, n):
+        self.send_command('SELect:CH%s 1' % n)
+
+    def disable_channel(self, n):
+        self.send_command('SELect:CH%s 0' % n)
+
+    def set_channel_state(self, n, state):
+        if state:
+            self.enable_channel(n)
+        else:
+            self.disable_channel(n)
+
+    def get_channel_state(self, n):
+        result = self.send_command('SELect:CH%s?' % n)
+        if result == "1":
+            return True
+        return False
+
+
 
 class PlotItem:
     colors = ['r', 'g', 'b', 'y', 'c', 'm']
@@ -359,7 +378,7 @@ class MainWindow(QMainWindow):
         self.devices = {}
         for d in devices:
             self.devices[d] = TectronixTDS(ip=d, config=devices[d])
-            self.devices[d].start_aq()
+            # self.devices[d].start_aq()
         self.device = list(self.devices.values())[0]
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
@@ -394,34 +413,34 @@ class MainWindow(QMainWindow):
     def ch1_clicked(self):
         if self.checkBox_1.isChecked():
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH1 1' )
+                self.devices[d].send_command('SELect:CH1 1')
         else:
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH1 0' )
+                self.devices[d].send_command('SELect:CH1 0')
 
     def ch2_clicked(self):
         if self.checkBox_2.isChecked():
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH2 1' )
+                self.devices[d].send_command('SELect:CH2 1')
         else:
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH2 0' )
+                self.devices[d].send_command('SELect:CH2 0')
 
     def ch3_clicked(self):
         if self.checkBox_3.isChecked():
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH3 1' )
+                self.devices[d].send_command('SELect:CH3 1')
         else:
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH3 0' )
+                self.devices[d].send_command('SELect:CH3 0')
 
     def ch4_clicked(self):
         if self.checkBox_4.isChecked():
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH4 1' )
+                self.devices[d].send_command('SELect:CH4 1')
         else:
             for d in self.devices:
-                self.devices[d].send_command('SELect:CH4 0' )
+                self.devices[d].send_command('SELect:CH4 0')
 
     def run_toggled(self):
         if self.pushButton_4.isChecked():
@@ -563,10 +582,9 @@ class MainWindow(QMainWindow):
 
     def save_isf(self, isf):
         for i in isf:
-            file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '-CH%s.isf' % (i+1)
+            file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '-CH%s.isf' % (i + 1)
             with open(os.path.join(self.out_dir, file_name), 'wb') as fid:
                 fid.write(isf[i])
-
 
     def select_folder(self):
         """Opens a file select dialog"""
