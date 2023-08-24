@@ -54,6 +54,7 @@ APPLICATION_VERSION = '0.1'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
+
 def tec_connect(ip):
     conn = http.client.HTTPConnection(ip)
     return conn
@@ -117,6 +118,120 @@ def tec_get_data(conn, chan_number):
         data += d
     x, y, head = isfread(io.BytesIO(data))
     return (x, y, head)
+
+
+class TectronixTDS:
+    default = {
+        '*LRN?': '',
+        'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
+        'ACQuire:MODe': 'SAMple',  # PEKdetect | AVErage,
+        'ACQuire:NUMACq?': '',
+        'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
+        'BUSY?': '',  # 0 | 1
+        'CH1:BANdwidth': '',
+        'CH1:COUPling': '',
+        'CH1:DESKew': '0.0',
+        'CH1:IMPedance': '',
+        'CH1:OFFSet': '',
+        'CH1:POSition': '',
+        'CH1:PRObe?': '',
+        'CH1:SCAle': '',
+        'CH2:BANdwidth': '',
+        'CH2:COUPling': '',
+        'CH2:DESKew': '0.0',
+        'CH2:IMPedance': '',
+        'CH2:OFFSet': '',
+        'CH2:POSition': '',
+        'CH2:PRObe?': '',
+        'CH2:SCAle': '',
+        'CH3:BANdwidth': '',
+        'CH3:COUPling': '',
+        'CH3:DESKew': '0.0',
+        'CH3:IMPedance': '',
+        'CH3:OFFSet': '',
+        'CH3:POSition': '',
+        'CH3:PRObe?': '',
+        'CH3:SCAle': '',
+        'CH4:BANdwidth': '',
+        'CH4:COUPling': '',
+        'CH4:DESKew': '0.0',
+        'CH4:IMPedance': '',
+        'CH4:OFFSet': '',
+        'CH4:POSition': '',
+        'CH4:PRObe?': '',
+        'CH4:SCAle': '',
+        'DATE': '',
+        'HORizontal:DELay:TIMe?': '',
+        'HORizontal:MAIn:SCAle': '',  # sec / div
+        'HORizontal:TRIGger:POSition': '',
+        'ID?': '',
+        'SELect?': '',
+        'SELect:CH1': '',  # 1 | 0 | ON | OFF
+        'SELect:CH2': '',  # 1 | 0 | ON | OFF
+        'SELect:CH3': '',  # 1 | 0 | ON | OFF
+        'SELect:CH4': '',  # 1 | 0 | ON | OFF
+        'TIMe': '',
+        'TRIGger': '',
+        'TRIGger:MAIn:EDGE:COUPling': '',
+        'TRIGger:MAIn:EDGE:SLOpe': '',
+        'TRIGger:MAIn:EDGE:SOUrce': '',
+        'TRIGger:MAIn:LEVel': '',
+        'TRIGger:MAIn:MODe': '',  # AUTO | NORMAL
+        'TRIGger:MAIn:TYPe': '',
+        'TRIGger:STATE?': '',  # ARMED or not
+        'VERBose': '0',
+        '*idn?': ''
+    }
+
+    def __init__(self, ip=None, config=None, logger=None):
+        if logger is None:
+            self.logger = config_logger()
+        else:
+            self.logger = logger
+        self.config = {}
+        if config is not None:
+            self.config = config
+        self.ip = '192.168.1.222'
+        if ip is not None:
+            self.ip = ip
+        self.connection = None
+        try:
+            self.connection = tec_connect(self.ip)
+        except:
+            raise
+        self.set_config()
+
+    def send_command(self, cmd):
+        # result = tec_send_command(self.connection, cmd)
+        # if cmd in self.config:
+        #     self.config[cmd] = result
+        # if cmd[:-1] in self.config:
+        #     self.config[cmd[:-1] = result
+        return tec_send_command(self.connection, cmd)
+
+    def get_data(self, ch_n):
+        return tec_get_data(self.connection, ch_n)
+
+    def get_image(self):
+        return tec_get_image(self.connection)
+
+    def set_config(self, config=None):
+        if config is None:
+            config = self.config
+        cfg = self.default.copy()
+        cfg.update(config)
+        self.config = cfg
+        for key in self.config:
+            if key.endswith('?') or self.config[key] == '':
+                if key.endswith("?"):
+                    key1 = key
+                else:
+                    key1 = key + "?"
+                self.config[key] = self.send_command(key1)
+                self.logger.debug('Read %s = %s', key, self.config[key])
+            else:
+                self.send_command(key + ' ' + self.config[key])
+                self.logger.debug('Set  %s = %s', key, self.config[key])
 
 
 class MainWindow(QMainWindow):
@@ -322,7 +437,9 @@ class MainWindow(QMainWindow):
             return False
 
 
-if __name__ == '__main__':
+t = TectronixTDS()
+
+if __name__ == 's__main__':
     # Create the GUI application
     app = QApplication(sys.argv)
     # Instantiate the main window
@@ -339,7 +456,6 @@ if __name__ == '__main__':
     sys.exit(app.exec_())
 
 tec_ip = "192.168.1.222"
-
 
 # conn = http.client.HTTPConnection(tec_ip)
 # conn.request("GET", "/")
@@ -359,7 +475,6 @@ tec_ip = "192.168.1.222"
 # command = 'TRIG?'  # query trigger params
 # command = 'TRIG FORC'  # force trigger
 # command = 'TRIG:STATE?'  # trigger state
-
 
 
 print('Connecting')
