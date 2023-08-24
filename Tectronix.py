@@ -117,7 +117,7 @@ def tec_get_data(conn, chan_number):
             break
         data += d
     x, y, head = isfread(io.BytesIO(data))
-    return (x, y, head)
+    return x, y, head, data
 
 
 class TectronixTDS:
@@ -199,6 +199,8 @@ class TectronixTDS:
             self.connection = tec_connect(self.ip)
         except:
             raise
+        self.plots = {}
+        self.isf = {}
         self.tec_type = ''
         self.last_aq = ''
         self.set_config()
@@ -269,19 +271,23 @@ class TectronixTDS:
         return False
 
     def read_plots(self):
-        plots = {}
+        self.plots = {}
+        self.isf = {}
         sel = self.send_command('SEL?').split(';')
         for i in range(4):
             if sel[i] == '1':
-            # if self.send_command('SELect:CH%s?'%ch) == '1':
-                x, y ,h = tec_get_data(self.connection, i)
-                plots[i] = {'x': x, 'y': y}
-        return plots
+                # if self.send_command('SELect:CH%s?'%ch) == '1':
+                x, y, h, isf = tec_get_data(self.connection, i)
+                self.plots[i] = {'x': x, 'y': y}
+                self.isf[i] = isf
+        return self.plots
+
 
 class PlotItem:
-    colors = ['r', 'g', 'b', 'y', 'c', 'n']
+    colors = ['r', 'g', 'b', 'y', 'c', 'm']
     color_index = 0
     label_index = 0
+
     def __init__(self, x, y, label=None, color=None):
         self.x = x
         self.y = y
@@ -295,7 +301,6 @@ class PlotItem:
             PlotItem.color_index += 1
             if PlotItem.color_index >= len(PlotItem.colors):
                 PlotItem.color_index = 0
-
 
 
 class MainWindow(QMainWindow):
@@ -314,6 +319,8 @@ class MainWindow(QMainWindow):
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
         restore_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
         self.folder = self.config.get('folder', 'D:/tec_data')
+        self.comboBox_2.insertItem(0, self.folder)
+        self.out_dir = ''
         self.make_data_folder()
         # Create new plot widget
         self.mplw = MplWidget()
@@ -326,6 +333,11 @@ class MainWindow(QMainWindow):
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
         self.pushButton_3.clicked.connect(self.send_command_pressed)
+        self.checkBox_1.clicked.connect(self.ch1_clicked)
+        self.checkBox_2.clicked.connect(self.ch2_clicked)
+        self.checkBox_3.clicked.connect(self.ch3_clicked)
+        self.checkBox_4.clicked.connect(self.ch4_clicked)
+        self.pushButton_4.toggled.connect(self.run_toggled)
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
@@ -339,15 +351,16 @@ class MainWindow(QMainWindow):
         self.clock.setFont(QFont('Open Sans Bold', 12))
         self.statusBar().addPermanentWidget(self.clock)
         #
-        self.read_folder(self.folder)
+        self.read_folder(self.out_dir)
         devices = self.config.get('devices', {})
         if len(devices) <= 0:
             self.logger.error("No Oscilloscopes defined in config")
-            exit(-1)
+            exit(-111)
         self.devices = {}
         for d in devices:
             self.devices[d] = TectronixTDS(ip=d, config=devices[d])
             self.devices[d].start_aq()
+        self.device = list(self.devices.values())[0]
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
@@ -377,6 +390,50 @@ class MainWindow(QMainWindow):
         rsp = list(self.devices.values())[0].send_command(txt)
         # print(rsp)
         self.label_6.setText(rsp)
+
+    def ch1_clicked(self):
+        if self.checkBox_1.isChecked():
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH1 1' )
+        else:
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH1 0' )
+
+    def ch2_clicked(self):
+        if self.checkBox_2.isChecked():
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH2 1' )
+        else:
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH2 0' )
+
+    def ch3_clicked(self):
+        if self.checkBox_3.isChecked():
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH3 1' )
+        else:
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH3 0' )
+
+    def ch4_clicked(self):
+        if self.checkBox_4.isChecked():
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH4 1' )
+        else:
+            for d in self.devices:
+                self.devices[d].send_command('SELect:CH4 0' )
+
+    def run_toggled(self):
+        if self.pushButton_4.isChecked():
+            for d in self.devices:
+                self.devices[d].start_aq()
+            self.pushButton_4.setText('Stop')
+            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+        else:
+            for d in self.devices:
+                self.devices[d].stop_aq()
+            self.pushButton_4.setText('Run')
+            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
 
     def list_selection_changed(self):
         axes = self.mplw.canvas.ax
@@ -501,7 +558,15 @@ class MainWindow(QMainWindow):
                 for p in plots.values():
                     data.append(PlotItem(p['x'], p['y']))
                 self.plot_data(data)
+                self.save_isf(self.devices[d].isf)
                 self.devices[d].start_aq()
+
+    def save_isf(self, isf):
+        for i in isf:
+            file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '-CH%s.isf' % (i+1)
+            with open(os.path.join(self.out_dir, file_name), 'wb') as fid:
+                fid.write(isf[i])
+
 
     def select_folder(self):
         """Opens a file select dialog"""
@@ -517,7 +582,7 @@ class MainWindow(QMainWindow):
             # Qt4 and Qt5 compatibility workaround
             if len(fn[0]) > 1:
                 fn = fn[0]
-            # different file selected
+            # if current folder selected
             if self.folder == fn:
                 return
             i = self.comboBox_2.findText(fn)
@@ -529,14 +594,18 @@ class MainWindow(QMainWindow):
                 self.comboBox_2.blockSignals(False)
                 self.comboBox_2.setUpdatesEnabled(True)
                 i = 0
-            # change selection abd fire callback
-            self.comboBox_2.setCurrentIndex(i)
+            # change selection and fire callback
+            if self.comboBox_2.currentIndex() != i:
+                self.comboBox_2.setCurrentIndex(i)
+            else:
+                self.folder_changed(i)
 
     def folder_changed(self, m):
         folder = self.comboBox_2.currentText()
         # self.folder = self.comboBox_2.itemText(m)
         self.folder = folder
-        self.read_folder(folder)
+        self.make_data_folder()
+        self.read_folder(self.out_dir)
 
     def processing_changed(self, m):
         self.erase()
