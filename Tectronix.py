@@ -124,7 +124,7 @@ class TectronixTDS:
     default = {
         # '*LRN?': '',
         'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
-        'ACQuire:MODe': 'SAMple',  # PEKdetect | AVErage,
+        'ACQuire:MODe': 'SAMple',  # PEAKdetect | AVErage,
         'ACQuire:NUMACq?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
         # 'BUSY?': '',  # 0 | 1

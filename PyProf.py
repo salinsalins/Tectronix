@@ -1,9 +1,9 @@
 # coding: utf-8
-'''
+"""
 Created on Jul 28, 2019
 
 @author: sanin
-'''
+"""
 
 import os
 import os.path
@@ -76,15 +76,16 @@ CONFIG = conf.CONFIG
 
 
 def gauss(x, ampl, cent, sigma):
-    return ampl*(1.0/(sigma*(numpy.sqrt(2.0*numpy.pi))))*(numpy.exp(-((x - cent) ** 2) / ((2.0 * sigma) ** 2)))
+    return ampl * (1.0 / (sigma * (numpy.sqrt(2.0 * numpy.pi)))) * (
+        numpy.exp(-((x - cent) ** 2) / ((2.0 * sigma) ** 2)))
 
 
-def lorentz(x, amp, cen, wid):
-    return (amp*wid**2/((x-cen)**2+wid**2))\
+def lorentz(x, ampl, cen, wid):
+    return ampl * wid ** 2 / ((x - cen) ** 2 + wid ** 2)
 
 
 def drawBox(ax, box, color=0, width=5):
-    ax.plot((box[0],box[0],box[2],box[2],box[0]),(box[1],box[3],box[3],box[1],box[1]))
+    ax.plot((box[0], box[0], box[2], box[2], box[0]), (box[1], box[3], box[3], box[1], box[1]))
     pass
 
 
@@ -107,7 +108,7 @@ def profile_param(y, level=0.5):
     return ymin, ymax, xmax, v.sum(), v
 
 
-def fwhm(y, level = 0.5):
+def fwhm(y, level=0.5):
     return profile_param(y, level)[3]
 
 
@@ -117,17 +118,17 @@ def background(p, level=0.5):
     try:
         # calculate profile characteristics
         _, _, xmax, w, _ = profile_param(p, level)
-        w1 = xmax - 2.0*w
+        w1 = xmax - 2.0 * w
         w1 = max(w1, 1)
-        w2 = xmax + 2.0*w
-        w2 = min(w2, n-1)
+        w2 = xmax + 2.0 * w
+        w2 = min(w2, n - 1)
         # everything outside +- 2*w is background ( p[k] )
         k = numpy.logical_or(x < w1, x > w2)
         # interpolate background with spline fit
         t = [1]
         t.extend(range(5, int(w1), 10))
-        t.extend(range(int(w2+1), n-1, 10))
-        #t = [1, 20, w1-50, w2+50, 800, np-1]
+        t.extend(range(int(w2 + 1), n - 1, 10))
+        # t = [1, 20, w1-50, w2+50, 800, np-1]
         spl = LSQUnivariateSpline(x[k], p[k], t)
         return spl(x)
     except:
@@ -207,7 +208,7 @@ class MainWindow(QMainWindow):
         print('erase')
         self.mplw.canvas.ax.clear()
         ####self.list_selection_changed()
-        #self.mplw.canvas.draw()
+        # self.mplw.canvas.draw()
 
     def list_selection_changed(self):
         print('list_selection_changed')
@@ -229,7 +230,7 @@ class MainWindow(QMainWindow):
         axes = self.mplw.canvas.ax
         if self.checkBox.isChecked():
             self.erase()
-        #axes.grid(color='k', linestyle='--')
+        # axes.grid(color='k', linestyle='--')
         axes.set_title(self.folder)
         sel = self.listWidget.selectedItems()
         if len(sel) <= 0:
@@ -243,7 +244,7 @@ class MainWindow(QMainWindow):
             arr = numpy.array(img)
             xs = arr.shape[1]
             ys = arr.shape[0]
-            #print(arr.shape, arr.dtype)
+            # print(arr.shape, arr.dtype)
             X = numpy.arange(xs)
             x = numpy.arange(ys)
             mp = numpy.zeros((nx, ys))
@@ -264,7 +265,7 @@ class MainWindow(QMainWindow):
                 axes.plot(x[v], 0.5 * (ymax + ymin) + p[v] * 0.0)
                 axes.annotate("FWHM = %5.2f mm; %i pixels" % (w * xscale, w), (0.45, 0.9), xycoords='axes fraction')
                 axes.annotate("Max = %5.2f at %5.2f mm; %i pixels" % (p[xmax], xmax * xscale, xmax), (0.45, 0.8),
-                            xycoords='axes fraction')
+                              xycoords='axes fraction')
                 # Plot background
                 axes.plot(x, background(p))
             elif self.comboBox.currentIndex() == 2:
@@ -278,7 +279,7 @@ class MainWindow(QMainWindow):
                 axes.plot(x[v], 0.5 * (ymax + ymin) + p1[v] * 0.0)
                 axes.annotate("FWHM = %5.2f mm; %i pixels" % (w * xscale, w), (0.45, 0.9), xycoords='axes fraction')
                 axes.annotate("Max = %5.2f at %5.2f mm; %i pixels" % (p1[xmax], xmax * xscale, xmax), (0.45, 0.8),
-                             xycoords='axes fraction')
+                              xycoords='axes fraction')
                 # Calculate gaussian and lorentzian fitting
                 try:
                     popt_gauss, pcov_gauss = scipy.optimize.curve_fit(gauss, x[v], p1[v], p0=[p1[xmax], xmax, w])
@@ -322,7 +323,7 @@ class MainWindow(QMainWindow):
                 axes.plot(mx, my, '.')
                 axes.plot(X, slope * X + intercept)
                 axes.annotate("Angle = %5.2f deg" % (slope / numpy.pi * 180.), (0.55, 0.8), xycoords='axes fraction',
-                             color='white')
+                              color='white')
 
                 # Remove tilt
                 rotated = img.rotate(slope / numpy.pi * 180.)
@@ -336,12 +337,12 @@ class MainWindow(QMainWindow):
                 axes.plot(mx, mw, 'o--')
                 axes.set_ylim(bottom=0.0)
 
-                #print("%3d %10s FWHM = %5.2f mm MAX = %5.2f at %5.2f mm Angle = %5.2f deg" % (n,
+                # print("%3d %10s FWHM = %5.2f mm MAX = %5.2f at %5.2f mm Angle = %5.2f deg" % (n,
                 #      tfiles[n], w * xscale,
                 #      p[xmax], xmax * xscale,
                 #      slope / numpy.pi * 180.))
 
-        #axes.legend()
+        # axes.legend()
         self.mplw.canvas.draw()
 
     def show_about(self):
@@ -354,7 +355,7 @@ class MainWindow(QMainWindow):
         timer.stop()
 
     def save_settings(self, file_name=CONFIG_FILE):
-        #global CONFIG
+        # global CONFIG
         try:
             # Save window size and position
             p = self.pos()
@@ -373,7 +374,7 @@ class MainWindow(QMainWindow):
             return False
 
     def restore_settings(self, file_name=CONFIG_FILE):
-        #global CONFIG
+        # global CONFIG
         try:
             with open(file_name, 'r') as configfile:
                 s = configfile.read()
@@ -438,7 +439,7 @@ class MainWindow(QMainWindow):
     def processing_changed(self, m):
         print('processing_changed')
         self.erase()
-        #self.list_selection_changed()
+        # self.list_selection_changed()
 
 
 if __name__ == '__main__':

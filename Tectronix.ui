@@ -148,9 +148,56 @@
         </widget>
        </item>
        <item>
+        <widget class="QComboBox" name="comboBox_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <item>
+          <property name="text">
+           <string>FFT</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Cumulative</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Signal</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="checkBox_2">
          <property name="text">
           <string>CH2</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -483,23 +530,23 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>100</width>
            <height>0</height>
           </size>
          </property>
          <item>
           <property name="text">
-           <string>Signal</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Spectrum</string>
+           <string>FFT</string>
           </property>
          </item>
          <item>
           <property name="text">
            <string>Cumulative</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Signal</string>
           </property>
          </item>
         </widget>
@@ -542,7 +589,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>23</height>
+     <height>34</height>
     </rect>
    </property>
    <property name="font">
