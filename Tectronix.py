@@ -50,7 +50,7 @@ from isfread import isfread
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '0.1'
+APPLICATION_VERSION = '1.0'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
@@ -123,10 +123,10 @@ def tec_get_data(conn, chan_number):
 class TectronixTDS:
     default = {
         # '*LRN?': '',
-        'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
-        'ACQuire:MODe': 'SAMple',  # PEAKdetect | AVErage,
-        'ACQuire:NUMACq?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
+        'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
+        # 'ACQuire:MODe': 'SAMple',  # PEAKdetect | AVErage,
+        # 'ACQuire:NUMACq?': '',
         # 'BUSY?': '',  # 0 | 1
         # 'CH1:BANdwidth': '',
         # 'CH1:COUPling': '',
@@ -135,7 +135,7 @@ class TectronixTDS:
         # 'CH1:OFFSet': '',
         # 'CH1:POSition': '',
         # 'CH1:PRObe?': '',
-        'CH1:SCAle': '',
+        # 'CH1:SCAle': '',
         # 'CH2:BANdwidth': '',
         # 'CH2:COUPling': '',
         # 'CH2:DESKew': '0.0',
@@ -143,7 +143,7 @@ class TectronixTDS:
         # 'CH2:OFFSet': '',
         # 'CH2:POSition': '',
         # 'CH2:PRObe?': '',
-        'CH2:SCAle': '',
+        # 'CH2:SCAle': '',
         # 'CH3:BANdwidth': '',
         # 'CH3:COUPling': '',
         # 'CH3:DESKew': '0.0',
@@ -151,7 +151,7 @@ class TectronixTDS:
         # 'CH3:OFFSet': '',
         # 'CH3:POSition': '',
         # 'CH3:PRObe?': '',
-        'CH3:SCAle': '',
+        # 'CH3:SCAle': '',
         # 'CH4:BANdwidth': '',
         # 'CH4:COUPling': '',
         # 'CH4:DESKew': '0.0',
@@ -159,31 +159,32 @@ class TectronixTDS:
         # 'CH4:OFFSet': '',
         # 'CH4:POSition': '',
         # 'CH4:PRObe?': '',
-        'CH4:SCAle': '',
+        # 'CH4:SCAle': '',
         # 'DATE': '',
         # 'HORizontal:DELay:TIMe?': '',
-        'HORizontal:MAIn:SCAle': '',  # sec / div
-        'HORizontal:TRIGger:POSition': '',
-        'ID?': '',
+        # 'HORizontal:MAIn:SCAle': '',  # sec / div
+        # 'HORizontal:TRIGger:POSition': '',
+        # 'ID?': '',
         # 'SELect?': '',
         'SELect:CH1': '',  # 1 | 0 | ON | OFF
         'SELect:CH2': '',  # 1 | 0 | ON | OFF
         'SELect:CH3': '',  # 1 | 0 | ON | OFF
         'SELect:CH4': '',  # 1 | 0 | ON | OFF
-        'TIMe': '',
-        'TRIGger': '',
+        # 'TIMe': '',
+        # 'TRIGger': '',
         # 'TRIGger:MAIn:EDGE:COUPling': '',
         # 'TRIGger:MAIn:EDGE:SLOpe': '',
         # 'TRIGger:MAIn:EDGE:SOUrce': '',
         # 'TRIGger:MAIn:LEVel': '',
         # 'TRIGger:MAIn:MODe': '',  # AUTO | NORMAL
         # 'TRIGger:MAIn:TYPe': '',
-        'TRIGger:STATE?': '',  # ARMED or not
+        # 'TRIGger:STATE?': '',  # ARMED or not
         # 'VERBose': '0',
         '*idn?': ''
     }
 
     def __init__(self, ip=None, config=None, logger=None):
+        t0 = time.time()
         if logger is None:
             self.logger = config_logger()
         else:
@@ -195,20 +196,18 @@ class TectronixTDS:
         if ip is not None:
             self.ip = ip
         self.connection = None
-        try:
-            self.connection = tec_connect(self.ip)
-        except:
-            raise
+        self.connection = tec_connect(self.ip)
         self.plots = {}
         self.isf = {}
         self.tec_type = ''
         self.last_aq = ''
         self.set_config()
-        self.logger.debug('%s at %s has been initialized %s', self.tec_type, self.ip, self.last_aq)
+        self.logger.debug('%s at %s has been initialized %s %6.3f s', self.tec_type, self.ip, self.last_aq, time.time()-t0)
 
     def send_command(self, cmd):
+        t0 = time.time()
         result = tec_send_command(self.connection, cmd)
-        # self.logger.debug('%s -> %s', cmd, result)
+        self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time()-t0)
         return result
 
     def get_data(self, ch_n):
@@ -218,6 +217,7 @@ class TectronixTDS:
         return tec_get_image(self.connection)
 
     def set_config(self, config=None):
+        t0 = time.time()
         if config is None:
             config = self.config
         cfg = self.default.copy()
@@ -234,11 +234,28 @@ class TectronixTDS:
             else:
                 self.send_command(key + ' ' + self.config[key])
                 # self.logger.debug('Set  %s = %s', key, self.config[key])
-
+        self.logger.debug('total %6.3f', time.time()-t0)
+        if '*idn?' not in self.config:
+            self.config['*idn?'] = self.send_command('*idn?')
         t = self.config['*idn?'].split(',')
         self.tec_type = ' '.join(t[0:2])
-        self.last_aq = self.send_command('ACQuire:NUMACq?')
-        self.config['ACQuire:NUMACq?'] = self.last_aq
+        if 'ACQuire:NUMACq' not in self.config:
+            self.config['ACQuire:NUMACq'] = self.send_command('ACQuire:NUMACq?')
+        self.last_aq = self.config['ACQuire:NUMACq']
+
+    def combine_commands(self, commands):
+        combined = ''
+        for key in commands:
+            if key.endswith('?') or commands[key] == '':
+                if not key.endswith("?"):
+                    key += "?"
+            else:
+                key = key + ' ' + commands[key]
+            if key.startswith('*'):
+                combined += ';' + key
+            else:
+                combined += ';:' + key
+        return combined[1:]
 
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
@@ -274,6 +291,7 @@ class TectronixTDS:
         self.plots = {}
         self.isf = {}
         sel = self.send_command('SEL?').split(';')
+        # self.logger.debug('selected %s', sel)
         for i in range(4):
             if sel[i] == '1':
                 # if self.send_command('SELect:CH%s?'%ch) == '1':
@@ -336,7 +354,7 @@ class MainWindow(QMainWindow):
         self.move(QPoint(50, 50))
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
-        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
+        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.folder = self.config.get('folder', 'D:/tec_data')
         self.comboBox_2.insertItem(0, self.folder)
         self.out_dir = ''
@@ -345,19 +363,7 @@ class MainWindow(QMainWindow):
         self.mplw = MplWidget()
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
-        # Connect signals with slots
-        self.pushButton.clicked.connect(self.erase)
-        self.comboBox.currentIndexChanged.connect(self.processing_changed)
-        self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
-        self.pushButton_2.clicked.connect(self.select_folder)
-        self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
-        self.pushButton_3.clicked.connect(self.send_command_pressed)
-        self.checkBox_1.clicked.connect(self.ch1_clicked)
-        self.checkBox_2.clicked.connect(self.ch2_clicked)
-        self.checkBox_3.clicked.connect(self.ch3_clicked)
-        self.checkBox_4.clicked.connect(self.ch4_clicked)
-        self.pushButton_4.toggled.connect(self.run_toggled)
-        # Menu actions connection
+       # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
@@ -380,6 +386,47 @@ class MainWindow(QMainWindow):
             self.devices[d] = TectronixTDS(ip=d, config=devices[d])
             # self.devices[d].start_aq()
         self.device = list(self.devices.values())[0]
+        v = self.device.config['SELect:CH1'] == '1'
+        self.checkBox_1.setChecked(v)
+        v = self.device.config['SELect:CH2'] == '1'
+        self.checkBox_2.setChecked(v)
+        v = self.device.config['SELect:CH3'] == '1'
+        self.checkBox_3.setChecked(v)
+        v = self.device.config['SELect:CH4'] == '1'
+        self.checkBox_4.setChecked(v)
+        v = self.device.send_command('CH1:SCAle?')
+        self.lineEdit_11.setText(v)
+        v = self.device.send_command('CH2:SCAle?')
+        self.lineEdit_12.setText(v)
+        v = self.device.send_command('CH3:SCAle?')
+        self.lineEdit_13.setText(v)
+        v = self.device.send_command('CH4:SCAle?')
+        self.lineEdit_14.setText(v)
+        v = self.device.send_command('HORizontal:MAIn:SCAle?')
+        self.lineEdit_15.setText(v)
+        # Connect signals with slots
+        self.pushButton.clicked.connect(self.erase)
+        self.comboBox.currentIndexChanged.connect(self.processing_changed)
+        # self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
+        self.pushButton_2.clicked.connect(self.select_folder)
+        self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
+
+        self.pushButton_3.clicked.connect(self.send_command_pressed)
+
+        self.checkBox_1.clicked.connect(self.ch1_clicked)
+        self.checkBox_2.clicked.connect(self.ch2_clicked)
+        self.checkBox_3.clicked.connect(self.ch3_clicked)
+        self.checkBox_4.clicked.connect(self.ch4_clicked)
+        self.lineEdit_11.editingFinished.connect(self.ch1_scale_changed)
+        self.lineEdit_12.editingFinished.connect(self.ch2_scale_changed)
+        self.lineEdit_13.editingFinished.connect(self.ch3_scale_changed)
+        self.lineEdit_14.editingFinished.connect(self.ch4_scale_changed)
+
+        self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
+
+        self.pushButton_5.clicked.connect(self.force_trigger_pressed)
+
+        self.pushButton_4.toggled.connect(self.run_toggled)
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
@@ -389,15 +436,15 @@ class MainWindow(QMainWindow):
         files = os.listdir(folder)
         # Filter *.isf files
         self.files = [f for f in files if f.endswith('.isf')]
-        self.listWidget.setUpdatesEnabled(False)
-        self.listWidget.blockSignals(True)
-        self.listWidget.clear()
-        self.listWidget.addItems(self.files)
-        self.listWidget.blockSignals(False)
-        if self.listWidget.count() <= 0:
-            return
-        self.listWidget.setUpdatesEnabled(True)
-        self.listWidget.item(0).setSelected(True)
+        # self.listWidget.setUpdatesEnabled(False)
+        # self.listWidget.blockSignals(True)
+        # self.listWidget.clear()
+        # self.listWidget.addItems(self.files)
+        # self.listWidget.blockSignals(False)
+        # if self.listWidget.count() <= 0:
+        #     return
+        # self.listWidget.setUpdatesEnabled(True)
+        # self.listWidget.item(0).setSelected(True)
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -409,6 +456,49 @@ class MainWindow(QMainWindow):
         rsp = list(self.devices.values())[0].send_command(txt)
         # print(rsp)
         self.label_6.setText(rsp)
+
+    def force_trigger_pressed(self):
+        self.device.send_command('TRIG FORC')
+
+    def horiz_scale_changed(self):
+        v = self.lineEdit_15.text()
+        self.device.send_command('HORizontal:MAIn:SCAle ' + str(v))
+        v = self.device.send_command('HORizontal:MAIn:SCAle?')
+        self.lineEdit_15.blockSignals(True)
+        self.lineEdit_15.setText(v)
+        self.lineEdit_15.blockSignals(False)
+
+    def ch1_scale_changed(self):
+        v = self.lineEdit_11.text()
+        self.device.send_command('CH1:SCAle ' + str(v))
+        v = self.device.send_command('CH1:SCAle?')
+        self.lineEdit_11.blockSignals(True)
+        self.lineEdit_11.setText(v)
+        self.lineEdit_11.blockSignals(False)
+
+    def ch2_scale_changed(self):
+        v = self.lineEdit_12.text()
+        self.device.send_command('CH2:SCAle ' + str(v))
+        v = self.device.send_command('CH2:SCAle?')
+        self.lineEdit_12.blockSignals(True)
+        self.lineEdit_12.setText(v)
+        self.lineEdit_12.blockSignals(False)
+
+    def ch3_scale_changed(self):
+        v = self.lineEdit_13.text()
+        self.device.send_command('CH3:SCAle ' + str(v))
+        v = self.device.send_command('CH3:SCAle?')
+        self.lineEdit_13.blockSignals(True)
+        self.lineEdit_13.setText(v)
+        self.lineEdit_13.blockSignals(False)
+
+    def ch4_scale_changed(self):
+        v = self.lineEdit_12.text()
+        self.device.send_command('CH4:SCAle ' + str(v))
+        v = self.device.send_command('CH4:SCAle?')
+        self.lineEdit_14.blockSignals(True)
+        self.lineEdit_14.setText(v)
+        self.lineEdit_14.blockSignals(False)
 
     def ch1_clicked(self):
         if self.checkBox_1.isChecked():
@@ -458,7 +548,7 @@ class MainWindow(QMainWindow):
         axes = self.mplw.canvas.ax
         if self.checkBox.isChecked():
             self.erase()
-        axes.grid(color='k', linestyle='--')
+        # axes.grid(color='k', linestyle='--')
         axes.set_title(self.folder)
         sel = self.listWidget.selectedItems()
         for item in sel:
@@ -562,7 +652,7 @@ class MainWindow(QMainWindow):
 
     def on_quit(self):
         # Save global settings
-        save_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2))
+        save_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         timer.stop()
         for d in self.devices.values():
             d.connection.close()
@@ -591,7 +681,7 @@ class MainWindow(QMainWindow):
         # Define current dir
         if self.folder is None:
             self.folder = "./"
-        dialog = QFileDialog(caption='Select folder', directory=self.folder)
+        dialog = QFileDialog(self, caption='Select folder', directory=self.folder)
         dialog.setFileMode(QFileDialog.Directory)
         # Open file selection dialog
         fn = dialog.getExistingDirectory()
