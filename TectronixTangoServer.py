@@ -308,6 +308,10 @@ class TectronixTangoServer(TangoServerPrototype):
             else:
                 return
 
+
+
+
+
     def read_data_ready(self):
         return self.data_ready_value
 
