@@ -7,49 +7,23 @@ Tectronix oscilloscope1000 series tango device server
 """
 import json
 import logging
-import sys;
+import sys
 import time
-
-sys.path.append('../TangoUtils')
 
 import numpy
 import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import attribute, command
 
+if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+
 from TangoServerPrototype import TangoServerPrototype
 from log_exception import log_exception
-
 
 from Tectronix import TectronixTDS
 
 
-def list_from_str(input_str):
-    try:
-        result = json.loads(input_str)
-        if not isinstance(result, list):
-            return []
-        return result[:16]
-    except KeyboardInterrupt:
-        raise
-    except:
-        return []
-
-
-def empty_array(xy='y'):
-    if xy == 'y':
-        return numpy.zeros(0, dtype=numpy.uint16)
-    else:
-        return numpy.zeros(0, dtype=np.float32)
-
-
-def name_from_number(n: int, xy='y'):
-    return 'chan%s%02i' % (xy, n)
-
-
-MAX_DATA_ARRAY_SIZE = 1000000
-MAX_ADC_VALUE = 4095
-MAX_ADC_CHANNELS = 16
+empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 
 class TectronixTangoServer(TangoServerPrototype):
@@ -66,15 +40,15 @@ class TectronixTangoServer(TangoServerPrototype):
 
     trigger = attribute(label="trigger", dtype=float,
                         display_level=DispLevel.OPERATOR,
-                        access=AttrWriteType.READ,
+                        access=AttrWriteType.READ_WRITE,
                         unit="", format="%10.0f",
                         doc="Trigger index")
 
-    sampling = attribute(label="sampling", dtype=float,
+    horizontal_scale = attribute(label="horizontal_scale", dtype=float,
                          display_level=DispLevel.OPERATOR,
-                         access=AttrWriteType.READ,
-                         unit="ms", format="%f",
-                         doc="Sampling in milliseconds - Time between points")
+                         access=AttrWriteType.READ_WRITE,
+                         unit="s/div", format="%f",
+                         doc="Horizontal scale in sec / div")
 
     record_in_progress = attribute(label="record_in_progress", dtype=bool,
                                    display_level=DispLevel.OPERATOR,
@@ -88,21 +62,6 @@ class TectronixTangoServer(TangoServerPrototype):
                            unit="", format="",
                            doc="Is data ready for reading")
 
-    channel_record_time_us = attribute(label="channel_record_time_us", dtype=int,
-                                       min_value=0,
-                                       display_level=DispLevel.OPERATOR,
-                                       access=AttrWriteType.READ_WRITE,
-                                       unit="us", format="%7d",
-                                       doc="Channel record time in microseconds")
-
-    # points_per_channel = attribute(label="points_per_channel", dtype=int,
-    #                                min_value=0,
-    #                                max_value=MAX_DATA_ARRAY_SIZE,
-    #                                display_level=DispLevel.OPERATOR,
-    #                                access=AttrWriteType.READ_WRITE,
-    #                                unit="", format="%7d",
-    #                                doc="Points per channel")
-    #
     ch1_state = attribute(label="channel1_state", dtype=bool,
                          display_level=DispLevel.OPERATOR,
                          access=AttrWriteType.READ_WRITE,
@@ -127,109 +86,98 @@ class TectronixTangoServer(TangoServerPrototype):
                          unit="", format="%s",
                          doc='Enable/Disable state of the channel')
 
+    start_time = attribute(label="start_time", dtype=float,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ,
+                           unit="s", format="%f",
+                           doc="Recording start time - UNIX seconds")
 
-
-    # start_time = attribute(label="start_time", dtype=float,
-    #                        display_level=DispLevel.OPERATOR,
-    #                        access=AttrWriteType.READ,
-    #                        unit="s", format="%f",
-    #                        doc="Recording start time - UNIX seconds")
-    #
-    # stop_time = attribute(label="stop_time", dtype=float,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ,
-    #                       unit="s", format="%f",
-    #                       doc="Recording stop time - UNIX seconds")
+    stop_time = attribute(label="stop_time", dtype=float,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ,
+                          unit="s", format="%f",
+                          doc="Recording stop time - UNIX seconds")
     # !!!!!!!!!!!!!!!!!!!!!
     # Channel numbering starts from 1 !!! (according manufacturer manuals and API)
     # !!!!!!!!!!!!!!!!!!!!!
     # channels for recorded ADC samples
-    chany01 = attribute(label="Channel_01", dtype=[numpy.uint16],
-                        min_value=0,
-                        max_value=MAX_ADC_VALUE,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
+    chany01 = attribute(label="Channel_01", dtype=[numpy.float32],
+                        max_dim_x=10000,
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
                         unit="V", format="%5.3f",
-                        doc="Channel 01 data. 16 bit integers. Volts = data * display_units")
+                        doc="Channel 01 data in Volts")
 
-    chany02 = attribute(label="Channel_02", dtype=[numpy.uint16],
-                        min_value=0,
-                        max_value=MAX_ADC_VALUE,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
+    chany02 = attribute(label="Channel_02", dtype=[numpy.float32],
+                        max_dim_x=10000,
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
                         unit="V", format="%5.3f",
-                        doc="Channel 02 data. 16 bit integers. Volts = data * display_units")
+                        doc="Channel 02 data in Volts")
 
-    chany03 = attribute(label="Channel_03", dtype=[numpy.uint16],
-                        min_value=0,
-                        max_value=MAX_ADC_VALUE,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
+    chany03 = attribute(label="Channel_03", dtype=[numpy.float32],
+                        max_dim_x=10000,
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
                         unit="V", format="%5.3f",
-                        doc="Channel 03 data. 16 bit integers. Volts = data * display_units")
+                        doc="Channel 03 data in Volts")
 
-    chany04 = attribute(label="Channel_04", dtype=[numpy.uint16],
-                        min_value=0,
-                        max_value=MAX_ADC_VALUE,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
+    chany04 = attribute(label="Channel_04", dtype=[numpy.float32],
+                        max_dim_x=10000,
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
                         unit="V", format="%5.3f",
-                        doc="Channel 04 data. 16 bit integers. Volts = data * display_units")
+                        doc="Channel 04 data in Volts")
 
     # channels for ADC times 32 bit floats in s
     chanx01 = attribute(label="Channel_01_times", dtype=[numpy.float32],
-                        min_value=0.0,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
+                        max_dim_x=10000,
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
-                        unit="ms", format="%5.3f",
-                        doc="Times for channel 01 counts. 32 bit floats in ms")
-    chanx02 = attribute(label="Channel_02_times", dtype=[numpy.float32],
-                        min_value=0.0,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
-                        max_dim_y=0,
-                        display_level=DispLevel.OPERATOR,
-                        access=AttrWriteType.READ,
-                        unit="ms", format="%5.3f",
-                        doc="Times for channel 02 counts. 32 bit floats in ms")
-    chanx03 = attribute(label="Channel_03_times", dtype=[numpy.float32],
-                        min_value=0.0,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
-                        max_dim_y=0,
-                        display_level=DispLevel.OPERATOR,
-                        access=AttrWriteType.READ,
-                        unit="ms", format="%5.3f",
-                        doc="Times for channel 03 counts. 32 bit floats in ms")
-    chanx04 = attribute(label="Channel_04_times", dtype=[numpy.float32],
-                        min_value=0.0,
-                        max_dim_x=MAX_DATA_ARRAY_SIZE,
-                        max_dim_y=0,
-                        display_level=DispLevel.OPERATOR,
-                        access=AttrWriteType.READ,
-                        unit="ms", format="%5.3f",
-                        doc="Times for channel 04 counts. 32 bit floats in ms")
+                        unit="s", format="%5.3f",
+                        doc="Times for channel counts. 32 bit floats in s")
 
-    # timings for all  channels 32-bit floats in ms
-    # times = attribute(label="times", dtype=[[numpy.float32]],
-    #                   max_dim_y=MAX_ADC_CHANNELS,
-    #                   max_dim_x=MAX_DATA_ARRAY_SIZE,
-    #                   min_value=0.0,
-    #                   display_level=DispLevel.OPERATOR,
-    #                   access=AttrWriteType.READ,
-    #                   unit="ms", format="%f",
-    #                   doc="ADC acquisition times for all channels. 32 bit floats in ms")
+    chanx02 = attribute(label="Channel_02_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%5.3f",
+                        doc="Times for channel counts. 32 bit floats in s")
+
+    chanx03 = attribute(label="Channel_03_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%5.3f",
+                        doc="Times for channel counts. 32 bit floats in s")
+
+    chanx04 = attribute(label="Channel_04_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%5.3f",
+                        doc="Times for channel counts. 32 bit floats in s")
 
     def init_device(self):
         self.tec = None
+        self.x1 = empty_array
+        self.x2 = empty_array
+        self.x3 = empty_array
+        self.x4 = empty_array
+        self.y1 = empty_array
+        self.y2 = empty_array
+        self.y3 = empty_array
+        self.y4 = empty_array
+        self.horizontal_scale_value = 1.0
+        self.trigger_value = 0.0
         self.device_type_str = "Unknown Tectronix device"
         self.device_name = ''
         self.record_initiated = False
@@ -239,14 +187,7 @@ class TectronixTangoServer(TangoServerPrototype):
         self.reconnect_timeout = time.time() + 5.0
         self.reconnect_count = 3
         # trigger
-        self.trigger_enabled = 0
         self.trigger_auto = 0
-        self.trigger_auto_ms = 0
-        self.trigger_channel = 1
-        self.trigger_direction = 0
-        self.trigger_threshold = 2048
-        self.trigger_hysteresis = 100
-        self.trigger_delay = 10.0
         # set logger and device proxy in super and then call self.set_config()
         super().init_device()
         if self not in TectronixTangoServer.device_list:
@@ -275,8 +216,10 @@ class TectronixTangoServer(TangoServerPrototype):
             # self.Tectronix oscilloscope.get_info()
             self.device_type_str = self.tec.tec_type
             super().set_config()
-            if self.device_type_str:
+            if self.device_type_str != "Unknown Tectronix device":
                 self.init_result = None
+                self.horizontal_scale_value = float(self.tec.send_command('HORizontal:MAIn:SCAle?'))
+                self.trigger_value = float(self.tec.send_command('HORizontal:TRIGger:POSition?'))
                 msg = '%s %s has been initialized' % (self.device_name, self.device_type_str)
                 self.logger.info(msg)
                 self.set_state(DevState.STANDBY)
@@ -309,7 +252,7 @@ class TectronixTangoServer(TangoServerPrototype):
         msg = '%s Tectronix oscilloscope has been deleted' % self.device_name
         self.logger.info(msg)
 
-    def read_tectronix_type(self):
+    def read_tecronix_type(self):
         return self.device_type_str
 
     def read_ch1_state(self):
@@ -336,34 +279,22 @@ class TectronixTangoServer(TangoServerPrototype):
     def write_ch4_state(self, state):
         self.tec.set_channel_state(4, bool(state))
 
-    # def read_info(self):
-    #     return str(self.Tectronix oscilloscope.info)
+    def read_horizontal_scale(self):
+        return self.horizontal_scale_value
 
-    # def read_ping(self):
-    #     try:
-    #         v = self.Tectronix oscilloscope.ping()
-    #         return v
-    #     except KeyboardInterrupt:
-    #         raise
-    #     except:
-    #         log_exception(self, '%s Ping error' % self.device_name, level=logging.INFO)
-    #     self.reconnect()
-    #     return -1.0
-
-    def read_scale(self):
-        return self.Tectronix oscilloscope.scale
+    def write_horizontal_scale(self,  v):
+        self.horizontal_scale_value = v
+        self.tec.send_command('HORizontal:MAIn:SCAle ' + str(v))
 
     def read_trigger(self):
-        return self.Tectronix oscilloscope.trigger
+        return self.trigger_value
 
-    def read_overflow(self):
-        return self.Tectronix oscilloscope.overflow
-
-    def read_sampling(self):
-        return self.Tectronix oscilloscope.sampling
+    def write_trigger(self , v):
+        self.trigger_value = v
+        self.tec.send_command('HORizontal:TRIGger:POSition ' + str(v))
 
     def read_record_in_progress(self):
-        return self.record_initiated
+        return self.tec.send_command('BUSY?') == '1'
 
     def write_record_in_progress(self, value: bool):
         if value:
@@ -380,206 +311,42 @@ class TectronixTangoServer(TangoServerPrototype):
     def read_data_ready(self):
         return self.data_ready_value
 
-    def read_channel_record_time_us(self):
-        return self.Tectronix oscilloscope.record_us
-
-    def write_channel_record_time_us(self, value):
-        last = self.config.get('channel_record_time_us', 1000000)
-        try:
-            self.config['channel_record_time_us'] = int(value)
-            self.set_sampling()
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.config['channel_record_time_us'] = last
-            log_exception(self, 'Incorrect channel_record_time_us')
-
-    def read_points_per_channel(self):
-        return self.Tectronix oscilloscope.points
-
-    def write_points_per_channel(self, value):
-        last = self.config.get('points_per_channel', 1000)
-        try:
-            self.config['points_per_channel'] = int(value)
-            self.set_sampling()
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.config['points_per_channel'] = last
-            log_exception(self, 'Incorrect points_per_channel')
-
-    def read_channels(self):
-        return str(self.Tectronix oscilloscope.channels)
-
-    def write_channels(self, value):
-        last = self.config.get('channels', '[1]')
-        try:
-            channels_list = list_from_str(str(value))
-            channels_list = channels_list[:self.max_channels]
-            self.config['channels'] = str(channels_list)
-            self.set_sampling()
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.config['channels'] = last
-            log_exception(self, 'Incorrect channels value')
-
     def read_start_time(self):
-        return self.Tectronix oscilloscope.recording_start_time
+        return self.recording_start_time
 
     def read_stop_time(self):
-        return self.Tectronix oscilloscope.read_time
+        return self.recording_stop_time
 
-    def read_channel_data(self, channel: int, xy: str = 'y'):
-        channel_name = name_from_number(channel, xy)
-        if not hasattr(self, channel_name):
-            msg = '%s Read for unknown channel %s' % (self.device_name, channel_name)
-            self.logger.info(msg)
-            return empty_array(xy)
-        channel_attribute = getattr(self, channel_name)
-        if channel not in self.Tectronix oscilloscope.channels:
-            channel_attribute.set_quality(AttrQuality.ATTR_INVALID)
-            msg = '%s Channel %s is not set for measurements' % (self.device_name, channel_name)
-            self.logger.info(msg)
-            return empty_array(xy)
-        if not self.read_data_ready():
-            channel_attribute.set_quality(AttrQuality.ATTR_INVALID)
-            msg = '%s Data is not ready for %s' % (self.device_name, channel_name)
-            self.logger.info(msg)
-            return empty_array(xy)
-        channel_index = self.Tectronix oscilloscope.channels.index(channel)
-        if 'x' == xy[0].lower():
-            data = self.Tectronix oscilloscope.times[channel_index, :]
-        else:
-            data = self.Tectronix oscilloscope.data[channel_index, :]
-        self.logger.debug('%s Reading %s %s', self.device_name, channel_name, data.shape)
-        channel_attribute.set_quality(AttrQuality.ATTR_VALID)
-        return data
-
-    # read channel helper functions
     def read_chany01(self):
-        return self.read_channel_data(1)
+        return self.y1
 
     def read_chany02(self):
-        return self.read_channel_data(2)
+        return self.y2
 
     def read_chany03(self):
-        return self.read_channel_data(3)
+        return self.y3
 
     def read_chany04(self):
-        return self.read_channel_data(4)
+        return self.y4
 
-    def read_chany05(self):
-        return self.read_channel_data(5)
-
-    def read_chany06(self):
-        return self.read_channel_data(6)
-
-    def read_chany07(self):
-        return self.read_channel_data(7)
-
-    def read_chany08(self):
-        return self.read_channel_data(8)
-
-    def read_chany09(self):
-        return self.read_channel_data(9)
-
-    def read_chany10(self):
-        return self.read_channel_data(10)
-
-    def read_chany11(self):
-        return self.read_channel_data(11)
-
-    def read_chany12(self):
-        return self.read_channel_data(12)
-
-    def read_chany13(self):
-        return self.read_channel_data(13)
-
-    def read_chany14(self):
-        return self.read_channel_data(14)
-
-    def read_chany15(self):
-        return self.read_channel_data(15)
-
-    def read_chany16(self):
-        return self.read_channel_data(16)
 
     def read_chanx01(self):
-        return self.read_channel_data(1, xy='x')
+        return self.x1
 
     def read_chanx02(self):
-        return self.read_channel_data(2, xy='x')
+        return self.x2
 
     def read_chanx03(self):
-        return self.read_channel_data(3, xy='x')
+        return self.x3
 
     def read_chanx04(self):
-        return self.read_channel_data(4, xy='x')
-
-    def read_chanx05(self):
-        return self.read_channel_data(5, xy='x')
-
-    def read_chanx06(self):
-        return self.read_channel_data(6, xy='x')
-
-    def read_chanx07(self):
-        return self.read_channel_data(7, xy='x')
-
-    def read_chanx08(self):
-        return self.read_channel_data(8, xy='x')
-
-    def read_chanx09(self):
-        return self.read_channel_data(9, xy='x')
-
-    def read_chanx10(self):
-        return self.read_channel_data(10, xy='x')
-
-    def read_chanx11(self):
-        return self.read_channel_data(11, xy='x')
-
-    def read_chanx12(self):
-        return self.read_channel_data(12, xy='x')
-
-    def read_chanx13(self):
-        return self.read_channel_data(13, xy='x')
-
-    def read_chanx14(self):
-        return self.read_channel_data(14, xy='x')
-
-    def read_chanx15(self):
-        return self.read_channel_data(15, xy='x')
-
-    def read_chanx16(self):
-        return self.read_channel_data(16, xy='x')
-
-    def read_raw_data(self):
-        if self.data_ready_value:
-            self.logger.debug('%s Reading raw_data %s', self.device_name, self.Tectronix oscilloscope.data.shape)
-            self.raw_data.set_quality(AttrQuality.ATTR_VALID)
-            return self.Tectronix oscilloscope.data
-        else:
-            self.raw_data.set_quality(AttrQuality.ATTR_INVALID)
-            msg = '%s Data is not ready' % self.device_name
-            self.logger.warning(msg)
-            return numpy.zeros(0, dtype=numpy.uint16)
-
-    def read_times(self):
-        if self.data_ready_value:
-            self.logger.debug('%s Reading time array %s', self.device_name, self.Tectronix oscilloscope.times.shape)
-            self.times.set_quality(AttrQuality.ATTR_VALID)
-            return self.Tectronix oscilloscope.times
-        else:
-            self.times.set_quality(AttrQuality.ATTR_INVALID)
-            msg = '%s Times array is not ready' % self.device_name
-            self.logger.warning(msg)
-            return numpy.zeros(0, dtype=numpy.uint16)
+        return self.x4
 
     @command(dtype_in=None, dtype_out=bool)
     def ready(self):
-        self.assert_Tectronix oscilloscope_open()
+        self.assert_open()
         try:
-            return self.Tectronix oscilloscope.ready()
+            return self.ready()
         except KeyboardInterrupt:
             raise
         except:
@@ -588,14 +355,14 @@ class TectronixTangoServer(TangoServerPrototype):
 
     @command(dtype_in=int, dtype_out=bool)
     def _start(self, value=0):
-        self.assert_Tectronix oscilloscope_open()
+        self.assert_open()
         try:
             if value > 0:
                 if self.record_initiated:
                     msg = '%s Can not start - record in progress' % self.device_name
                     self.logger.info(msg)
                     return False
-            self.Tectronix oscilloscope.start_recording()
+            self.start_recording()
             self.record_initiated = True
             self.data_ready_value = False
             self.set_state(DevState.RUNNING)
@@ -629,7 +396,7 @@ class TectronixTangoServer(TangoServerPrototype):
     @command(dtype_in=None)
     def stop_recording(self):
         try:
-            self.Tectronix oscilloscope.stop()
+            self.stop()
             self.set_state(DevState.STANDBY)
             self.set_status('Recording has been stopped')
             self.logger.info('%s Recording has been stopped' % self.device_name)
@@ -642,27 +409,23 @@ class TectronixTangoServer(TangoServerPrototype):
         self.record_initiated = False
         self.data_ready_value = False
 
-    def assert_proxy(self):
-        if not hasattr(self, 'device_proxy') or self.device_proxy is None:
-            self.device_proxy = tango.DeviceProxy(self.device_name)
-
-    def assert_Tectronix oscilloscope_open(self):
-        if self.Tectronix oscilloscope.opened:
-            if self.Tectronix oscilloscope.last_status == pl1000.PICO_STATUS['PICO_OK'] or \
-                    self.Tectronix oscilloscope.last_status == pl1000.PICO_STATUS['PICO_BUSY']:
+   def assert_open(self):
+        if self.opened:
+            if self.last_status == pl1000.PICO_STATUS['PICO_OK'] or \
+                    self.last_status == pl1000.PICO_STATUS['PICO_BUSY']:
                 return True
-            if self.Tectronix oscilloscope.last_status == pl1000.PICO_STATUS['PICO_NOT_RESPONDING'] or \
-                    self.Tectronix oscilloscope.last_status == pl1000.PICO_STATUS['PICO_NOT_FOUND']:
-                self.Tectronix oscilloscope.opened = False
+            if self.last_status == pl1000.PICO_STATUS['PICO_NOT_RESPONDING'] or \
+                    self.last_status == pl1000.PICO_STATUS['PICO_NOT_FOUND']:
+                self..opened = False
                 self.record_initiated = False
                 self.data_ready_value = False
                 self.reconnect()
-                return self.Tectronix oscilloscope.opened
+                return self.opened
         else:
             self.record_initiated = False
             self.data_ready_value = False
             self.reconnect()
-            return self.Tectronix oscilloscope.opened
+            return self.opened
 
     def set_channel_properties(self, channel, props=None):
         try:
@@ -706,7 +469,7 @@ class TectronixTangoServer(TangoServerPrototype):
         self.assert_Tectronix oscilloscope_open()
         channels_list = list_from_str(self.config.get('channels', '[1]'))
         points = int(self.config.get('points_per_channel', 1000))
-        record_us = int(self.config.get('channel_record_time_us', MAX_DATA_ARRAY_SIZE))
+        record_us = int(self.config.get('channel_record_time_us', 10000))
         self.Tectronix oscilloscope.set_timing(channels_list, points, record_us)
         self.data_ready_value = False
         self.config['points_per_channel'] = self.Tectronix oscilloscope.points
@@ -777,11 +540,11 @@ class TectronixTangoServer(TangoServerPrototype):
 def looping():
     global t0
     time.sleep(0.010)
-    for dev in PicoPyServer.device_list:
+    for dev in TectronixTangoServer.device_list:
         time.sleep(0.001)
         if time.time() - t0 > 1.0:
             t0 = time.time()
-            dev.assert_Tectronix oscilloscope_open()
+            dev.assert_open()
         if dev.record_initiated:
             try:
                 if dev.ready():
@@ -792,18 +555,9 @@ def looping():
                 raise
             except:
                 log_exception(dev, '%s Reading data error' % dev.device_name, level=logging.WARNING)
-        # if not dev.tango_logging:
-        #     dev.configure_tango_logging()
-    # PicoPyServer.logger.debug('loop end')
 
-
-def post_init_callback(server: PicoPyServer):
-    server.logger.debug('enter')
-    util = server.Util()
-    pass
 
 
 if __name__ == "__main__":
     t0 = time.time()
-    # PicoPyServer.run_server(event_loop=looping, post_init_callback=post_init_callback)
-    PicoPyServer.run_server(event_loop=looping)
+    TectronixTangoServer.run_server(event_loop=looping)
