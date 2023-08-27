@@ -9,6 +9,8 @@ s='s=%r;print(s%%s)';print(s%s)
 import datetime
 import http.client
 import io
+import socket
+
 from PIL import Image
 import os.path
 import sys
@@ -17,6 +19,8 @@ import logging
 import time
 import numpy
 
+import PyQt5
+import pyqtgraph
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import qApp
@@ -55,17 +59,17 @@ CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
 
-def tec_connect(ip):
-    conn = http.client.HTTPConnection(ip)
-    return conn
+def tec_connect(ip, timeout=None):
+    connection = http.client.HTTPConnection(ip, timeout=timeout)
+    return connection
 
 
-def tec_send_command(conn, cmd):
+def tec_send_command(connection, cmd):
     params = ('COMMAND=' + cmd + '\n\rgpibsend=Send\n\rname=\n\r').encode()
     headers = {"Content-type": "text/plain",
                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"}
-    conn.request("POST", "/Comm.html", params, headers)
-    response = conn.getresponse()
+    connection.request("POST", "/Comm.html", params, headers)
+    response = connection.getresponse()
     if response.status != 200:
         return None
     data = b''
@@ -87,11 +91,11 @@ def tec_send_command(conn, cmd):
     return data[n + n1 + 1:m]
 
 
-def tec_get_image(conn):
+def tec_get_image(connection):
     params = b''
     headers = {"Accept": "image/avif,image/webp,*/*"}
-    conn.request("GET", "/Image.png", params, headers)
-    response = conn.getresponse()
+    connection.request("GET", "/Image.png", params, headers)
+    response = connection.getresponse()
     data = b''
     while True:
         d = response.read(1024)
@@ -102,22 +106,27 @@ def tec_get_image(conn):
     return img
 
 
-def tec_get_data(conn, chan_number):
+def tec_get_isf(connection, chan_number):
     str = 'command=select:ch%s on\r\ncommand=save:waveform:fileformat internal\r\nwfmsend=Get\r\n' % chan_number
     params = str.encode()
     headers = {"Accept": "text/html, application/xhtml+xml, image/jxr, */*",
                "Content-Type": "text/plain",
                "Cache-Control": "no-cache"}
-    conn.request("POST", "/getwfm.isf", params, headers)
-    response = conn.getresponse()
+    connection.request("POST", "/getwfm.isf", params, headers)
+    response = connection.getresponse()
     data = b''
     while True:
         d = response.read(1024)
         if not d:
             break
         data += d
-    x, y, head = isfread(io.BytesIO(data))
-    return x, y, head, data
+    return io.BytesIO(data)
+
+
+def tec_get_data(connection, chan_number):
+    isf = tec_get_isf(connection, chan_number)
+    x, y, h = isfread(isf)
+    return x, y, h, isf
 
 
 class TectronixTDS:
@@ -183,7 +192,7 @@ class TectronixTDS:
         '*idn?': ''
     }
 
-    def __init__(self, ip=None, config=None, logger=None):
+    def __init__(self, ip=None, timeout=None, config=None, logger=None):
         t0 = time.time()
         if logger is None:
             self.logger = config_logger()
@@ -195,20 +204,26 @@ class TectronixTDS:
         self.ip = '192.168.1.222'
         if ip is not None:
             self.ip = ip
+        self.connected = False
         self.connection = None
-        self.connection = tec_connect(self.ip)
+        self.connection = tec_connect(self.ip, 1.0)
         self.plots = {}
         self.isf = {}
         self.tec_type = ''
         self.last_aq = ''
         self.set_config()
-        self.logger.debug('%s at %s has been initialized %s %6.3f s', self.tec_type, self.ip, self.last_aq, time.time()-t0)
+        self.logger.debug('%s at %s has been initialized %s %6.3f s', self.tec_type, self.ip, self.last_aq,
+                          time.time() - t0)
 
     def send_command(self, cmd):
         t0 = time.time()
-        result = tec_send_command(self.connection, cmd)
-        self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time()-t0)
-        return result
+        try:
+            result = tec_send_command(self.connection, cmd)
+            self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time() - t0)
+            return result
+        except (socket.timeout, http.client.CannotSendRequest):
+            self.connected = False
+            return None
 
     def get_data(self, ch_n):
         return tec_get_data(self.connection, ch_n)
@@ -234,11 +249,12 @@ class TectronixTDS:
             else:
                 self.send_command(key + ' ' + self.config[key])
                 # self.logger.debug('Set  %s = %s', key, self.config[key])
-        self.logger.debug('total %6.3f', time.time()-t0)
+        self.logger.debug('total %6.3f', time.time() - t0)
         if '*idn?' not in self.config:
             self.config['*idn?'] = self.send_command('*idn?')
-        t = self.config['*idn?'].split(',')
-        self.tec_type = ' '.join(t[0:2])
+        if self.config['*idn?'] is not None:
+            t = self.config['*idn?'].split(',')
+            self.tec_type = ' '.join(t[0:2])
         if 'ACQuire:NUMACq' not in self.config:
             self.config['ACQuire:NUMACq'] = self.send_command('ACQuire:NUMACq?')
         self.last_aq = self.config['ACQuire:NUMACq']
@@ -319,7 +335,6 @@ class TectronixTDS:
         return False
 
 
-
 class PlotItem:
     colors = ['r', 'g', 'b', 'y', 'c', 'm']
     color_index = 0
@@ -354,7 +369,8 @@ class MainWindow(QMainWindow):
         self.move(QPoint(50, 50))
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
-        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+        restore_settings(self, file_name=CONFIG_FILE,
+                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.folder = self.config.get('folder', 'D:/tec_data')
         self.comboBox_2.insertItem(0, self.folder)
         self.out_dir = ''
@@ -363,7 +379,7 @@ class MainWindow(QMainWindow):
         self.mplw = MplWidget()
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
-       # Menu actions connection
+        # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
         # Additional decorations
@@ -429,6 +445,15 @@ class MainWindow(QMainWindow):
         self.pushButton_4.toggled.connect(self.run_toggled)
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
+
+        pyqtgraph.setConfigOption('background', '#1d648d')
+        # pyqtgraph.setConfigOption('background', 'w')
+        pyqtgraph.setConfigOption('foreground', 'k')
+        # pyqtgraph.setConfigOption('antialias', True)
+        pyqtgraph.setConfigOption('leftButtonPan', False)
+        x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
+        y = numpy.sin(x)
+        self.graphicsView.plot(x, y)
 
     def read_folder(self, folder):
         self.erase()
@@ -652,7 +677,8 @@ class MainWindow(QMainWindow):
 
     def on_quit(self):
         # Save global settings
-        save_settings(self, file_name=CONFIG_FILE, widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+        save_settings(self, file_name=CONFIG_FILE,
+                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         timer.stop()
         for d in self.devices.values():
             d.connection.close()
