@@ -6,19 +6,19 @@ s='s=%r;print(s%%s)';print(s%s)
 '''
 import threading
 
-import pyqtgraph
 # import qtpy
 # from qtpy.QtWidgets import QMenu
 from PyQt5.QtWidgets import QMenu
 from pyqtgraph.Qt import QtCore
 
+import pyqtgraph
 # pg = pyqtgraph
 
 # pyqtgraph.setConfigOption('background', '#1d648d')
 pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', 'k')
 # pyqtgraph.setConfigOption('antialias', True)
-pyqtgraph.setConfigOption('leftButtonPan', False)
+# pyqtgraph.setConfigOption('leftButtonPan', False)
 
 
 class CustomViewBox(pyqtgraph.ViewBox):

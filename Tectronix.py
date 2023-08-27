@@ -40,8 +40,7 @@ from PyQt5.QtGui import QFont
 import PyQt5.QtGui as QtGui
 from PyQt5 import QtNetwork
 
-import matplotlib
-import matplotlib.pyplot as plt
+# import matplotlib
 
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
@@ -446,14 +445,11 @@ class MainWindow(QMainWindow):
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
-        pyqtgraph.setConfigOption('background', '#1d648d')
-        # pyqtgraph.setConfigOption('background', 'w')
-        pyqtgraph.setConfigOption('foreground', 'k')
-        # pyqtgraph.setConfigOption('antialias', True)
-        pyqtgraph.setConfigOption('leftButtonPan', False)
         x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
         y = numpy.sin(x)
-        self.graphicsView.plot(x, y)
+        self.graphicsView.getViewBox().setBackgroundColor('#1d648da0')
+        self.graphicsView.getPlotItem().showGrid(True, True)
+        self.graphicsView.plot(x, y, pen={'color': 'g', 'width': 2})
 
     def read_folder(self, folder):
         self.erase()
@@ -822,6 +818,9 @@ print('Reading image')
 t0 = time.time()
 result = tec_get_image(conn)
 print('Elapsed', time.time() - t0, 's')
+
+import matplotlib.pyplot as plt
+
 imgplot = plt.imshow(result)
 plt.show()
 
