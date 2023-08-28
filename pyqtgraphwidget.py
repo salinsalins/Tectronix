@@ -139,7 +139,9 @@ class MplAdapter:
 
     def set_ylabel(self, val=''):
         self.item.setLabel('left', val)
-        pass
+
+    def set_yrange(self, val1, val2):
+        self.item.setYRange(val1, val2)
 
     def draw(self, val=''):
         pass

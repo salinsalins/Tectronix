@@ -6,56 +6,17 @@ Created on Aug 23, 2023
 
 s='s=%r;print(s%%s)';print(s%s)
 """
-import datetime
 import http.client
 import io
 import socket
-
 from PIL import Image
-import os.path
 import sys
-import json
-import logging
 import time
-import numpy
-
-import PyQt5
-import pyqtgraph
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import qApp
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QComboBox
-from PyQt5.QtWidgets import QCheckBox
-from PyQt5.QtWidgets import QPlainTextEdit
-from PyQt5 import uic
-from PyQt5.QtCore import QSize
-from PyQt5.QtCore import QPoint
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QColor
-from PyQt5.QtGui import QBrush
-from PyQt5.QtGui import QFont
-import PyQt5.QtGui as QtGui
-from PyQt5 import QtNetwork
-
-# import matplotlib
 
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
-from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
-# from mplwidget import MplWidget
-from pyqtgraphwidget import MplWidget
 from isfread import isfread
-
-ORGANIZATION_NAME = 'BINP'
-APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
-APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '1.0'
-CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
-UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
 
 def tec_connect(ip, timeout=None):
@@ -119,12 +80,12 @@ def tec_get_isf(connection, chan_number):
         if not d:
             break
         data += d
-    return io.BytesIO(data)
+    return data
 
 
 def tec_get_data(connection, chan_number):
     isf = tec_get_isf(connection, chan_number)
-    x, y, h = isfread(isf)
+    x, y, h = isfread(io.BytesIO(isf))
     return x, y, h, isf
 
 
@@ -192,10 +153,10 @@ class TectronixTDS:
         # 'TRIGger:MAIn:TYPe': '',
         # 'TRIGger:STATE?': '',  # ARMED or not
         # 'VERBose': '0',
-        '*idn?': ''
+        # '*idn?': ''
     }
 
-    def __init__(self, ip=None, timeout=None, config=None, logger=None):
+    def __init__(self, ip=None, timeout=2.0, config=None, logger=None):
         t0 = time.time()
         if logger is None:
             self.logger = config_logger()
@@ -207,18 +168,26 @@ class TectronixTDS:
         self.ip = '192.168.1.222'
         if ip is not None:
             self.ip = ip
+        self.timeout = timeout
         self.connected = False
-        self.reconnect_time = 0.0
+        self.reconnect_time = time.time() + 5.0
         self.connection = None
-        self.connection = tec_connect(self.ip, 1.0)
-        self.connected = True
+        # self.connection = tec_connect(self.ip, 2.0)
+        # self.connected = True
         self.plots = {}
-        self.isf = {}
         self.tec_type = ''
         self.last_aq = ''
+        self.connect(timeout=timeout)
         self.set_config()
-        self.logger.debug('%s at %s has been initialized %s %6.3f s', self.tec_type, self.ip, self.last_aq,
-                          time.time() - t0)
+        if self.connected:
+            self.logger.debug('%s at %s has been initialized (last_aq=%s) in %6.3f s',
+                              self.tec_type, self.ip, self.last_aq, time.time() - t0)
+        else:
+            self.logger.info('Can not initialize tectronix oscilloscope')
+
+    def __del__(self):
+        if self.connection is not None:
+            self.connection.close()
 
     def set_config(self, config=None):
         t0 = time.time()
@@ -234,13 +203,13 @@ class TectronixTDS:
                 else:
                     key1 = key + "?"
                 self.config[key] = self.send_command(key1)
-                # self.logger.debug('Read %s = %s', key, self.config[key])
             else:
                 self.send_command(key + ' ' + self.config[key])
-                # self.logger.debug('Set  %s = %s', key, self.config[key])
-        self.logger.debug('total %6.3f', time.time() - t0)
-        if '*idn?' not in self.config:
+        self.logger.debug('configuration total %6.3f s', time.time() - t0)
+        if '*idn?' not in self.config or self.config['*idn?'] == '':
             self.config['*idn?'] = self.send_command('*idn?')
+        if not self.connected:
+            return
         if self.config['*idn?'] is not None:
             t = self.config['*idn?'].split(',')
             self.tec_type = ' '.join(t[0:2])
@@ -249,67 +218,85 @@ class TectronixTDS:
         self.last_aq = self.config['ACQuire:NUMACq']
 
     def send_command(self, cmd):
-        self.reconnect()
+        if not self.reconnect():
+            return None
         t0 = time.time()
         try:
             result = tec_send_command(self.connection, cmd)
+            if cmd.endswith('?'):
+                self.config[cmd] = result
             self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time() - t0)
             return result
-        except (socket.timeout, http.client.CannotSendRequest):
+        except KeyboardInterrupt:
+            raise
+        except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
             self.disconnect()
             return None
 
-    def connect(self):
-        self.connection = tec_connect(self.ip, 1.0)
+    def connect(self, timeout=2.0):
+        self.connection = tec_connect(self.ip, timeout=timeout)
         self.connected = True
-        self.logger.debug('Connected')
+        self.config['*idn?'] = self.send_command('*idn?')
+        if not self.connected:
+            self.logger.debug('Connection failed')
+        else:
+            self.logger.debug('Connected')
 
     def disconnect(self):
+        if not self.connected:
+            return
         if self.connection is not None:
             self.connection.close()
         self.connected = False
-        self.reconnect_time = time.time() + 2.0
+        self.reconnect_time = time.time() + 5.0
         self.logger.debug('Disconnected')
 
     def reconnect(self):
         if self.connected:
             return True
-        if self.reconnect_time > time.time():
-            self.connect()
+        if self.reconnect_time < time.time():
+            self.disconnect()
+            self.logger.debug('Reconnecting')
+            self.__init__(ip=self.ip, timeout=self.timeout, config=self.config, logger=self.logger)
             return self.connected
         else:
             return False
 
     def get_data(self, ch_n):
+        if not self.connected:
+            return
         return tec_get_data(self.connection, ch_n)
 
     def get_image(self):
+        if not self.connected:
+            return
         return tec_get_image(self.connection)
 
-    def combine_commands(self, commands):
-        combined = ''
-        for key in commands:
-            if key.endswith('?') or commands[key] == '':
-                if not key.endswith("?"):
-                    key += "?"
-            else:
-                key = key + ' ' + commands[key]
-            if key.startswith('*'):
-                combined += ';' + key
-            else:
-                combined += ';:' + key
-        return combined[1:]
-
+    # def combine_commands(self, commands):
+    #     combined = ''
+    #     for key in commands:
+    #         if key.endswith('?') or commands[key] == '':
+    #             if not key.endswith("?"):
+    #                 key += "?"
+    #         else:
+    #             key = key + ' ' + commands[key]
+    #         if key.startswith('*'):
+    #             combined += ';' + key
+    #         else:
+    #             combined += ';:' + key
+    #     return combined[1:]
+    #
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
-        if num_aq != self.last_aq:
+        if num_aq is not None and num_aq != self.last_aq:
             self.logger.debug('New shot detected %s %s', num_aq, self.last_aq)
             self.last_aq = num_aq
             return True
         return False
 
     def start_aq(self):
-        self.send_command('ACQuire:STATE 0')
+        if self.send_command('ACQuire:STATE 0') is None:
+            return
         self.send_command('ACQuire:STATE 1')
         self.last_aq = self.send_command('ACQuire:NUMACq?')
         st = self.send_command('TRIGger:STATE?')
@@ -326,21 +313,22 @@ class TectronixTDS:
 
     def is_aq_in_progeress(self):
         st = self.send_command('BUSY?')
-        if st.upper().startswith('1'):
+        if st is not None and st.upper().startswith('1'):
             return True
         return False
 
     def read_plots(self):
         self.plots = {}
-        self.isf = {}
+        if not self.connected:
+            return self.plots
         sel = self.send_command('SEL?').split(';')
-        # self.logger.debug('selected %s', sel)
+        if not self.connected:
+            return self.plots
         for i in range(4):
             if sel[i] == '1':
                 # if self.send_command('SELect:CH%s?'%ch) == '1':
-                x, y, h, isf = tec_get_data(self.connection, i)
-                self.plots[i] = {'x': x, 'y': y}
-                self.isf[i] = isf
+                x, y, h, isf = self.get_data(i+1)
+                self.plots[i+1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
         return self.plots
 
     def enable_channel(self, n):
@@ -382,439 +370,7 @@ class PlotItem:
                 PlotItem.color_index = 0
 
 
-class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
-        # Initialization of the superclass
-        super(MainWindow, self).__init__(parent)
-        # logging config
-        self.logger = config_logger()
-        # Load the UI
-        uic.loadUi(UI_FILE, self)
-        # Default window parameters
-        self.setMinimumSize(QSize(480, 240))  # Set sizes
-        self.resize(QSize(640, 480))
-        self.move(QPoint(50, 50))
-        self.setWindowTitle(APPLICATION_NAME)  # Set a title
-        # self.setWindowIcon(QtGui.QIcon('icon.png'))
-        restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
-        self.folder = self.config.get('folder', 'D:/tec_data')
-        self.comboBox_2.insertItem(0, self.folder)
-        self.out_dir = ''
-        self.make_data_folder()
-        # Create new plot widget
-        self.mplw = MplWidget()
-        layout = self.frame_3.layout()
-        layout.addWidget(self.mplw)
-        # Menu actions connection
-        self.actionQuit.triggered.connect(qApp.quit)
-        self.actionAbout.triggered.connect(self.show_about)
-        # Additional decorations
-        # self.radioButton.setStyleSheet('QRadioButton {background-color: red}')
-        # self.lineEdit.setStyleSheet('QLineEdit {background-color: red}')
-        # self.doubleSpinBox_4.setSingleStep(0.1)
-        # Clock at status bar
-        self.clock = QLabel(" ")
-        # self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
-        self.clock.setFont(QFont('Open Sans Bold', 12))
-        self.statusBar().addPermanentWidget(self.clock)
-        #
-        self.read_folder(self.out_dir)
-        devices = self.config.get('devices', {})
-        if len(devices) <= 0:
-            self.logger.error("No Oscilloscopes defined in config")
-            exit(-111)
-        self.devices = {}
-        for d in devices:
-            self.devices[d] = TectronixTDS(ip=d, config=devices[d])
-            # self.devices[d].start_aq()
-        self.device = list(self.devices.values())[0]
-        sel = self.device.config['SELect?'].split(';')
-        v = sel[0] == '1'
-        self.checkBox_1.setChecked(v)
-        v = sel[1] == '1'
-        self.checkBox_2.setChecked(v)
-        v = sel[2] == '1'
-        self.checkBox_3.setChecked(v)
-        v = sel[3] == '1'
-        self.checkBox_4.setChecked(v)
-        v = self.device.config['CH1?'].split(';')[0]
-        # v = self.device.send_command('CH1:SCAle?')
-        self.lineEdit_11.setText(v)
-        v = self.device.config['CH2?'].split(';')[0]
-        # v = self.device.send_command('CH2:SCAle?')
-        self.lineEdit_12.setText(v)
-        v = self.device.config['CH3?'].split(';')[0]
-        # v = self.device.send_command('CH3:SCAle?')
-        self.lineEdit_13.setText(v)
-        v = self.device.config['CH4?'].split(';')[0]
-        # v = self.device.send_command('CH4:SCAle?')
-        self.lineEdit_14.setText(v)
-        v = self.device.send_command('HORizontal:MAIn:SCAle?')
-        self.lineEdit_15.setText(v)
-        # Connect signals with slots
-        self.pushButton.clicked.connect(self.erase)
-        self.comboBox.currentIndexChanged.connect(self.processing_changed)
-        # self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
-        self.pushButton_2.clicked.connect(self.select_folder)
-        self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
-
-        self.pushButton_3.clicked.connect(self.send_command_pressed)
-
-        self.checkBox_1.clicked.connect(self.ch1_clicked)
-        self.checkBox_2.clicked.connect(self.ch2_clicked)
-        self.checkBox_3.clicked.connect(self.ch3_clicked)
-        self.checkBox_4.clicked.connect(self.ch4_clicked)
-        self.lineEdit_11.editingFinished.connect(self.ch1_scale_changed)
-        self.lineEdit_12.editingFinished.connect(self.ch2_scale_changed)
-        self.lineEdit_13.editingFinished.connect(self.ch3_scale_changed)
-        self.lineEdit_14.editingFinished.connect(self.ch4_scale_changed)
-
-        self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
-
-        self.pushButton_5.clicked.connect(self.force_trigger_pressed)
-
-        self.pushButton_4.toggled.connect(self.run_toggled)
-        #
-        print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
-
-        x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
-        y = numpy.sin(x)
-        self.graphicsView.getViewBox().setBackgroundColor('#1d648da0')
-        self.graphicsView.getPlotItem().showGrid(True, True)
-        self.graphicsView.plot(x, y, pen={'color': 'g', 'width': 2})
-
-    def read_folder(self, folder):
-        self.erase()
-        # All files in the folder
-        files = os.listdir(folder)
-        # Filter *.isf files
-        self.files = [f for f in files if f.endswith('.isf')]
-        # self.listWidget.setUpdatesEnabled(False)
-        # self.listWidget.blockSignals(True)
-        # self.listWidget.clear()
-        # self.listWidget.addItems(self.files)
-        # self.listWidget.blockSignals(False)
-        # if self.listWidget.count() <= 0:
-        #     return
-        # self.listWidget.setUpdatesEnabled(True)
-        # self.listWidget.item(0).setSelected(True)
-
-    def erase(self):
-        self.mplw.canvas.ax.clear()
-        ###self.list_selection_changed()
-        # self.mplw.canvas.draw()
-
-    def send_command_pressed(self):
-        txt = self.lineEdit_2.text()
-        rsp = list(self.devices.values())[0].send_command(txt)
-        # print(rsp)
-        self.label_6.setText(rsp)
-
-    def force_trigger_pressed(self):
-        self.device.send_command('TRIG FORC')
-
-    def horiz_scale_changed(self):
-        v = self.lineEdit_15.text()
-        self.device.send_command('HORizontal:MAIn:SCAle ' + str(v))
-        v = self.device.send_command('HORizontal:MAIn:SCAle?')
-        self.lineEdit_15.blockSignals(True)
-        self.lineEdit_15.setText(v)
-        self.lineEdit_15.blockSignals(False)
-
-    def ch1_scale_changed(self):
-        v = self.lineEdit_11.text()
-        self.device.send_command('CH1:SCAle ' + str(v))
-        v = self.device.send_command('CH1:SCAle?')
-        self.lineEdit_11.blockSignals(True)
-        self.lineEdit_11.setText(v)
-        self.lineEdit_11.blockSignals(False)
-
-    def ch2_scale_changed(self):
-        v = self.lineEdit_12.text()
-        self.device.send_command('CH2:SCAle ' + str(v))
-        v = self.device.send_command('CH2:SCAle?')
-        self.lineEdit_12.blockSignals(True)
-        self.lineEdit_12.setText(v)
-        self.lineEdit_12.blockSignals(False)
-
-    def ch3_scale_changed(self):
-        v = self.lineEdit_13.text()
-        self.device.send_command('CH3:SCAle ' + str(v))
-        v = self.device.send_command('CH3:SCAle?')
-        self.lineEdit_13.blockSignals(True)
-        self.lineEdit_13.setText(v)
-        self.lineEdit_13.blockSignals(False)
-
-    def ch4_scale_changed(self):
-        v = self.lineEdit_12.text()
-        self.device.send_command('CH4:SCAle ' + str(v))
-        v = self.device.send_command('CH4:SCAle?')
-        self.lineEdit_14.blockSignals(True)
-        self.lineEdit_14.setText(v)
-        self.lineEdit_14.blockSignals(False)
-
-    def ch1_clicked(self):
-        if self.checkBox_1.isChecked():
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH1 1')
-        else:
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH1 0')
-
-    def ch2_clicked(self):
-        if self.checkBox_2.isChecked():
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH2 1')
-        else:
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH2 0')
-
-    def ch3_clicked(self):
-        if self.checkBox_3.isChecked():
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH3 1')
-        else:
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH3 0')
-
-    def ch4_clicked(self):
-        if self.checkBox_4.isChecked():
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH4 1')
-        else:
-            for d in self.devices:
-                self.devices[d].send_command('SELect:CH4 0')
-
-    def run_toggled(self):
-        if self.pushButton_4.isChecked():
-            for d in self.devices:
-                self.devices[d].start_aq()
-            self.pushButton_4.setText('Stop')
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
-        else:
-            for d in self.devices:
-                self.devices[d].stop_aq()
-            self.pushButton_4.setText('Run')
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
-
-    def list_selection_changed(self):
-        axes = self.mplw.canvas.ax
-        if self.checkBox.isChecked():
-            self.erase()
-        # axes.grid(color='k', linestyle='--')
-        axes.set_title(self.folder)
-        sel = self.listWidget.selectedItems()
-        for item in sel:
-            # print(item.text())
-            full_name = os.path.join(self.folder, item.text())
-            x, y, head = isfread(full_name)
-            fy = numpy.fft.rfft(y)
-            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-            fp = numpy.abs(fy) ** 2
-            zero = fp[0]
-            fp[0] = 0.0
-            if self.comboBox.currentIndex() == 1:
-                axes.set_xlabel('Frequency, Hz')
-                axes.set_ylabel('Spectral Power, a.u.')
-                axes.plot(fx, fp, label=item.text())
-            elif self.comboBox.currentIndex() == 2:
-                fy = numpy.fft.rfft(y)
-                fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-                fp = numpy.abs(fy) ** 2
-                zero = fp[0]
-                fp[0] = 0.0
-                pf = fp * 0.0
-                pf[-1] = fp[-1]
-                for i in range(fx.size - 2, -1, -1):
-                    pf[i] = pf[i + 1] + fp[i]
-                axes.set_xlabel('Frequency, Hz')
-                axes.set_ylabel('Cumulative Power, a.u.')
-                axes.plot(fx, pf, label=item.text())
-            elif self.comboBox.currentIndex() == 0:
-                axes.set_xlabel('Time, s')
-                axes.set_ylabel('Signal, V')
-                axes.plot(x, y, label=item.text())
-            else:
-                evalsrt = ''
-                try:
-                    axes.set_xlabel('X value, a.u.')
-                    axes.set_ylabel('Processed Signal, a.u.')
-                    evalsrt = self.comboBox.currentText()
-                    (xp, yp) = eval(evalsrt)
-                    axes.plot(xp, yp, label=item.text())
-                except:
-                    self.logger.warning('eval() ERROR in %s' % evalsrt)
-        axes.legend()
-        self.mplw.canvas.draw()
-
-    def plot_data(self, data):
-        axes = self.mplw.canvas.ax
-        if self.checkBox.isChecked():
-            self.erase()
-        # axes.grid(color='k', linestyle='--')
-        axes.set_title(self.folder)
-        for item in data:
-            self.plot_trace(item)
-        # axes.legend()
-        self.mplw.canvas.draw()
-
-    def plot_trace(self, item):
-        axes = self.mplw.canvas.ax
-        x = item.x
-        y = item.y
-        if self.comboBox.currentIndex() == 0:
-            axes.set_xlabel('Time, s')
-            axes.set_ylabel('Signal, V')
-            axes.plot(x, y, label=item.label, color=item.color)
-            return
-        if self.comboBox.currentIndex() == 1:
-            fy = numpy.fft.rfft(y)
-            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-            fp = numpy.abs(fy) ** 2
-            fp[0] = 0.0
-            axes.set_xlabel('Frequency, Hz')
-            axes.set_ylabel('Spectral Power, a.u.')
-            axes.plot(fx, fp, label=item.label, color=item.color)
-        elif self.comboBox.currentIndex() == 2:
-            fy = numpy.fft.rfft(y)
-            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-            fp = numpy.abs(fy) ** 2
-            fp[0] = 0.0
-            pf = fp * 0.0
-            pf[-1] = fp[-1]
-            for i in range(fx.size - 2, -1, -1):
-                pf[i] = pf[i + 1] + fp[i]
-            axes.set_xlabel('Frequency, Hz')
-            axes.set_ylabel('Cumulative Power, a.u.')
-            axes.plot(fx, pf, label=item.label, color=item.color)
-        else:
-            evalsrt = ''
-            try:
-                axes.set_xlabel('X value, a.u.')
-                axes.set_ylabel('Processed Signal, a.u.')
-                evalsrt = self.comboBox.currentText()
-                (xp, yp) = eval(evalsrt)
-                axes.plot(xp, yp, label=item.label, color=item.color)
-            except:
-                self.logger.warning('eval() ERROR in %s' % evalsrt)
-
-    def show_about(self):
-        QMessageBox.information(self, 'About', APPLICATION_NAME +
-                                ' Version ' + APPLICATION_VERSION +
-                                '\nTextronix oscilloscope control utility.', QMessageBox.Ok)
-
-    def on_quit(self):
-        # Save global settings
-        save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
-        timer.stop()
-        for d in self.devices.values():
-            d.connection.close()
-
-    def timer_handler(self):
-        t = time.strftime('%H:%M:%S')
-        self.clock.setText(t)
-        for d in self.devices:
-            if self.devices[d].is_aq_finished():
-                data = []
-                plots = self.devices[d].read_plots()
-                for p in plots.values():
-                    data.append(PlotItem(p['x'], p['y']))
-                self.plot_data(data)
-                self.save_isf(self.devices[d].isf)
-                self.devices[d].start_aq()
-
-    def save_isf(self, isf):
-        for i in isf:
-            file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '-CH%s.isf' % (i + 1)
-            with open(os.path.join(self.out_dir, file_name), 'wb') as fid:
-                fid.write(isf[i])
-
-    def select_folder(self):
-        """Opens a file select dialog"""
-        # Define current dir
-        if self.folder is None:
-            self.folder = "./"
-        dialog = QFileDialog(self, caption='Select folder', directory=self.folder)
-        dialog.setFileMode(QFileDialog.Directory)
-        # Open file selection dialog
-        fn = dialog.getExistingDirectory()
-        # if a fn is not empty
-        if fn:
-            # Qt4 and Qt5 compatibility workaround
-            if len(fn[0]) > 1:
-                fn = fn[0]
-            # if current folder selected
-            if self.folder == fn:
-                return
-            i = self.comboBox_2.findText(fn)
-            if i < 0:
-                # add item to history
-                self.comboBox_2.setUpdatesEnabled(False)
-                self.comboBox_2.blockSignals(True)
-                self.comboBox_2.insertItem(-1, fn)
-                self.comboBox_2.blockSignals(False)
-                self.comboBox_2.setUpdatesEnabled(True)
-                i = 0
-            # change selection and fire callback
-            if self.comboBox_2.currentIndex() != i:
-                self.comboBox_2.setCurrentIndex(i)
-            else:
-                self.folder_changed(i)
-
-    def folder_changed(self, m):
-        folder = self.comboBox_2.currentText()
-        # self.folder = self.comboBox_2.itemText(m)
-        self.folder = folder
-        self.make_data_folder()
-        self.read_folder(self.out_dir)
-
-    def processing_changed(self, m):
-        self.erase()
-        # self.list_selection_changed()
-
-    @staticmethod
-    def get_log_folder():
-        ydf = datetime.datetime.today().strftime('%Y')
-        mdf = datetime.datetime.today().strftime('%Y-%m')
-        ddf = datetime.datetime.today().strftime('%Y-%m-%d')
-        folder = os.path.join(ydf, mdf, ddf)
-        return folder
-
-    def make_data_folder(self):
-        of = os.path.join(self.folder, self.get_log_folder())
-        try:
-            if not os.path.exists(of):
-                os.makedirs(of)
-                self.logger.debug("Output folder %s has been created", of)
-            self.out_dir = of
-            return True
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.logger.warning("Can not create output folder %s", of)
-            self.out_dir = None
-            return False
-
-
-if __name__ == '__main__':
-    # Create the GUI application
-    app = QApplication(sys.argv)
-    # Instantiate the main window
-    dmw = MainWindow()
-    app.aboutToQuit.connect(dmw.on_quit)
-    # Show it
-    dmw.show()
-    # Defile and start timer task
-    timer = QTimer()
-    timer.timeout.connect(dmw.timer_handler)
-    timer.start(1000)
-    # Start the Qt main loop execution, exiting from this script
-    # with the same return code of Qt application
-    sys.exit(app.exec_())
-
-tec_ip = "192.168.1.222"
+# tec_ip = "192.168.1.222"
 
 # conn = http.client.HTTPConnection(tec_ip)
 # conn.request("GET", "/")
@@ -836,37 +392,37 @@ tec_ip = "192.168.1.222"
 # command = 'TRIG:STATE?'  # trigger state
 
 
-print('Connecting')
-t0 = time.time()
-conn = tec_connect(tec_ip)
-print('Elapsed', time.time() - t0, 's')
-
-print('Sending command')
-t0 = time.time()
-result = tec_send_command(conn, 'TRIG:STATE?')
-print('Elapsed', time.time() - t0, 's')
-print(result)
-
-print('Reading image')
-t0 = time.time()
-result = tec_get_image(conn)
-print('Elapsed', time.time() - t0, 's')
-
-import matplotlib.pyplot as plt
-
-imgplot = plt.imshow(result)
-plt.show()
-
-print('Reading data')
-t0 = time.time()
-x, y, head = tec_get_data(conn, 2)
-print('Elapsed', time.time() - t0, 's')
-print(head)
-plt.plot(x, y)
-plt.xlabel('Time, s')
-plt.ylabel('Signal, V')
-plt.show()
-
-conn.close()
-
-print('Finished')
+# print('Connecting')
+# t0 = time.time()
+# conn = tec_connect(tec_ip)
+# print('Elapsed', time.time() - t0, 's')
+#
+# print('Sending command')
+# t0 = time.time()
+# result = tec_send_command(conn, 'TRIG:STATE?')
+# print('Elapsed', time.time() - t0, 's')
+# print(result)
+#
+# print('Reading image')
+# t0 = time.time()
+# result = tec_get_image(conn)
+# print('Elapsed', time.time() - t0, 's')
+#
+# import matplotlib.pyplot as plt
+#
+# imgplot = plt.imshow(result)
+# plt.show()
+#
+# print('Reading data')
+# t0 = time.time()
+# x, y, head = tec_get_data(conn, 2)
+# print('Elapsed', time.time() - t0, 's')
+# print(head)
+# plt.plot(x, y)
+# plt.xlabel('Time, s')
+# plt.ylabel('Signal, V')
+# plt.show()
+#
+# conn.close()
+#
+# print('Finished')
