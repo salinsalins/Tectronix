@@ -150,11 +150,18 @@ class MainWindow(QMainWindow):
         self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
         self.frame_3.layout().addWidget(self.plotWidget)
         # self.plotWidget.getViewBox().setBackgroundColor('k')
-        f = self.plotWidget.font()
-        f.setPointSize(20)
-        self.plotWidget.setFont(f)
         self.plotWidget.getViewBox().setBackgroundColor('#1d648da0')
+        # font = QFont('Open Sans', 14, weight=QFont.Bold)
+        font = QFont('Open Sans', 16)
+        self.plotWidget.getPlotItem().getAxis("bottom").setTickFont(font)
+        self.plotWidget.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
+        self.plotWidget.getPlotItem().getAxis("left").setTickFont(font)
         self.plotWidget.getPlotItem().showGrid(True, True)
+        self.plotWidget.getPlotItem().getAxis("bottom").label.setFont(font)
+        self.plotWidget.getPlotItem().setLabel('bottom', 'Time', units='s')
+        self.plotWidget.getPlotItem().getAxis("left").label.setFont(font)
+        # self.plotWidget.getPlotItem().getAxis("left").setStyle(tickTextWidth=320, tickTextHeight=320)
+        self.plotWidget.getPlotItem().setLabel('left', 'Signal', units='div')
         self.plotWidget.plot(x, y, pen={'color': 'g', 'width': 2})
         self.plot = self.plotWidget.plot
 
@@ -265,7 +272,7 @@ class MainWindow(QMainWindow):
         # axes.grid(color='k', linestyle='--')
         axes.set_title('Data from ' + self.folder)
         for i in data:
-            self.plot_trace(data[i], color=colors[i-1])
+            self.plot_trace(data[i], color=colors[i - 1])
         # axes.legend()
         self.mplw.canvas.draw()
 
@@ -279,7 +286,8 @@ class MainWindow(QMainWindow):
             axes.set_ylabel('Signal, div')
             axes.plot(x, y, color=color)
             dx = x[1] - x[0]
-            axes.plot(x[0]*2-x[0:2]-150*dx, [p, p], color=color, symbol='t2', symbolPen={'color': color, 'width': 3})
+            axes.plot(x[0] * 2 - x[0:2] - 150 * dx, [p, p], color=color, symbol='t2',
+                      symbolPen={'color': color, 'width': 3})
             return
         if self.comboBox.currentIndex() == 1:
             fy = numpy.fft.rfft(y)
@@ -338,7 +346,7 @@ class MainWindow(QMainWindow):
                 p = plots[i]
                 s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
                 p['scale'] = s
-                p['pos'] = float(self.device.send_command('CH%s:POSition?'%i))
+                p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
             axes = self.mplw.canvas.ax
             axes.set_yrange(-5.0, 5.0)
             for i in plots:
