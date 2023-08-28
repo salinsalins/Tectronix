@@ -350,26 +350,6 @@ class TectronixTDS:
         return False
 
 
-class PlotItem:
-    colors = ['r', 'g', 'b', 'y', 'c', 'm']
-    color_index = 0
-    label_index = 0
-
-    def __init__(self, x, y, label=None, color=None):
-        self.x = x
-        self.y = y
-        self.label = label
-        if label is None:
-            self.label = 'Label%s' % PlotItem.label_index
-            PlotItem.label_index += 1
-        self.color = color
-        if color is None:
-            self.color = self.colors[PlotItem.color_index]
-            PlotItem.color_index += 1
-            if PlotItem.color_index >= len(PlotItem.colors):
-                PlotItem.color_index = 0
-
-
 # tec_ip = "192.168.1.222"
 
 # conn = http.client.HTTPConnection(tec_ip)

@@ -34,7 +34,7 @@ from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QFont
 import PyQt5.QtGui as QtGui
 
-from Tectronix import TectronixTDS, PlotItem
+from Tectronix import TectronixTDS
 
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         self.clock.setFont(QFont('Open Sans Bold', 12))
         self.statusBar().addPermanentWidget(self.clock)
         #
+        self.rearm = False
         config = self.config.get('config', None)
         ip = self.config.get('ip', None)
         if config is None or ip is None:
@@ -144,11 +145,11 @@ class MainWindow(QMainWindow):
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
-        # x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
-        # y = numpy.sin(x)
-        # self.graphicsView.getViewBox().setBackgroundColor('#1d648da0')
-        # self.graphicsView.getPlotItem().showGrid(True, True)
-        # self.graphicsView.plot(x, y, pen={'color': 'g', 'width': 2})
+        x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
+        y = numpy.sin(x)
+        self.graphicsView.getViewBox().setBackgroundColor('#1d648da0')
+        self.graphicsView.getPlotItem().showGrid(True, True)
+        self.graphicsView.plot(x, y, pen={'color': 'g', 'width': 2})
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -232,9 +233,20 @@ class MainWindow(QMainWindow):
             self.device.start_aq()
             self.pushButton_4.setText('Stop')
             self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+            self.rearm = True
         else:
             self.device.stop_aq()
             self.pushButton_4.setText('Run')
+            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
+            self.rearm = False
+
+    def single_seq_pressed(self):
+        self.device.stop_aq()
+        self.device.start_aq()
+        if self.device.start_aq():
+            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+            self.rearm = False
+        else:
             self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
 
     def plot_data(self, data):
@@ -312,7 +324,8 @@ class MainWindow(QMainWindow):
         if self.device.is_aq_finished():
             if self.device.connected:
                 plots = self.device.read_plots()
-                self.device.start_aq()
+                if self.rearm:
+                    self.device.start_aq()
                 self.save_isf(plots)
             for i in plots:
                 p = plots[i]

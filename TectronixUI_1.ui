@@ -35,9 +35,6 @@
     <property name="sizeConstraint">
      <enum>QLayout::SetMinimumSize</enum>
     </property>
-    <property name="rightMargin">
-     <number>20</number>
-    </property>
     <item>
      <widget class="QFrame" name="frame">
       <property name="frameShape">
@@ -83,6 +80,13 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
+          <item row="6" column="2">
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_9">
             <property name="sizePolicy">
@@ -118,50 +122,6 @@
             </property>
            </widget>
           </item>
-          <item row="10" column="2">
-           <widget class="QPushButton" name="pushButton_5">
-            <property name="text">
-             <string>Force Trigger</string>
-            </property>
-            <property name="checkable">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <spacer name="verticalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="9" column="2">
-           <widget class="Line" name="line_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="checkBox_1">
-            <property name="text">
-             <string>CH1</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QCheckBox" name="checkBox_3">
-            <property name="text">
-             <string>CH3</string>
-            </property>
-           </widget>
-          </item>
           <item row="9" column="0">
            <widget class="Line" name="line_3">
             <property name="orientation">
@@ -184,26 +144,6 @@
              </size>
             </property>
            </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="Line" name="line">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="14" column="2">
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item row="4" column="2">
            <widget class="QLineEdit" name="lineEdit_13">
@@ -228,35 +168,32 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="2">
-           <widget class="Line" name="line_2">
+          <item row="6" column="0">
+           <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
-          <item row="5" column="2">
-           <widget class="QLineEdit" name="lineEdit_14">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+          <item row="9" column="2">
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
-            <property name="maximumSize">
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
              <size>
-              <width>100</width>
-              <height>16777215</height>
+              <width>20</width>
+              <height>40</height>
              </size>
             </property>
-           </widget>
-          </item>
-          <item row="11" column="2">
-           <widget class="Line" name="line_5">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
+           </spacer>
           </item>
           <item row="1" column="2" alignment="Qt::AlignRight">
            <widget class="QLabel" name="label_8">
@@ -283,6 +220,52 @@
             </property>
             <property name="textFormat">
              <enum>Qt::PlainText</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="2">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="10" column="2">
+           <widget class="QPushButton" name="pushButton_5">
+            <property name="text">
+             <string>Force Trigger</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
+           <widget class="QLineEdit" name="lineEdit_14">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="2">
+           <widget class="Line" name="line_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
@@ -325,47 +308,17 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
-            </property>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="checkBox_1">
             <property name="text">
-             <string>Horizontal</string>
-            </property>
-            <property name="textFormat">
-             <enum>Qt::PlainText</enum>
+             <string>CH1</string>
             </property>
            </widget>
           </item>
-          <item row="12" column="0">
-           <widget class="QCheckBox" name="checkBox_5">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QCheckBox::indicator:unchecked {
-   background-color: red;
-}
-</string>
-            </property>
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="checkBox_3">
             <property name="text">
-             <string/>
+             <string>CH3</string>
             </property>
            </widget>
           </item>
@@ -407,13 +360,47 @@
             </property>
            </widget>
           </item>
-          <item row="13" column="2">
-           <widget class="QPushButton" name="pushButton_6">
-            <property name="text">
-             <string>Single Seq</string>
+          <item row="12" column="0">
+           <widget class="QCheckBox" name="checkBox_5">
+            <property name="enabled">
+             <bool>false</bool>
             </property>
-            <property name="checkable">
-             <bool>true</bool>
+            <property name="styleSheet">
+             <string notr="true">QCheckBox::indicator:unchecked {
+   background-color: red;
+}
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Horizontal</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
             </property>
            </widget>
           </item>
@@ -447,9 +434,6 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
-           <widget class="PlotWidget" name="graphicsView"/>
-          </item>
          </layout>
         </widget>
        </item>
@@ -819,7 +803,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>34</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="font">
@@ -917,13 +901,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>PlotWidget</class>
-   <extends>QGraphicsView</extends>
-   <header>pyqtgraph</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
