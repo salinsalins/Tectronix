@@ -133,9 +133,10 @@ class TectronixTDS:
         # '*LRN?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
         'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
-        # 'ACQuire:MODe': 'SAMple',  # PEAKdetect | AVErage,
-        # 'ACQuire:NUMACq?': '',
+        'ACQuire:MODe': 'SAMple',  # PEAKdetect | AVErage,
+        'ACQuire:NUMACq?': '',
         # 'BUSY?': '',  # 0 | 1
+        'CH1?': '',
         # 'CH1:BANdwidth': '',
         # 'CH1:COUPling': '',
         # 'CH1:DESKew': '0.0',
@@ -144,6 +145,7 @@ class TectronixTDS:
         # 'CH1:POSition': '',
         # 'CH1:PRObe?': '',
         # 'CH1:SCAle': '',
+        'CH2?': '',
         # 'CH2:BANdwidth': '',
         # 'CH2:COUPling': '',
         # 'CH2:DESKew': '0.0',
@@ -152,6 +154,7 @@ class TectronixTDS:
         # 'CH2:POSition': '',
         # 'CH2:PRObe?': '',
         # 'CH2:SCAle': '',
+        'CH3?': '',
         # 'CH3:BANdwidth': '',
         # 'CH3:COUPling': '',
         # 'CH3:DESKew': '0.0',
@@ -160,6 +163,7 @@ class TectronixTDS:
         # 'CH3:POSition': '',
         # 'CH3:PRObe?': '',
         # 'CH3:SCAle': '',
+        'CH4?': '',
         # 'CH4:BANdwidth': '',
         # 'CH4:COUPling': '',
         # 'CH4:DESKew': '0.0',
@@ -173,11 +177,11 @@ class TectronixTDS:
         # 'HORizontal:MAIn:SCAle': '',  # sec / div
         # 'HORizontal:TRIGger:POSition': '',
         # 'ID?': '',
-        # 'SELect?': '',
-        'SELect:CH1': '',  # 1 | 0 | ON | OFF
-        'SELect:CH2': '',  # 1 | 0 | ON | OFF
-        'SELect:CH3': '',  # 1 | 0 | ON | OFF
-        'SELect:CH4': '',  # 1 | 0 | ON | OFF
+        'SELect?': '',
+        # 'SELect:CH1': '',  # 1 | 0 | ON | OFF
+        # 'SELect:CH2': '',  # 1 | 0 | ON | OFF
+        # 'SELect:CH3': '',  # 1 | 0 | ON | OFF
+        # 'SELect:CH4': '',  # 1 | 0 | ON | OFF
         # 'TIMe': '',
         # 'TRIGger': '',
         # 'TRIGger:MAIn:EDGE:COUPling': '',
@@ -204,8 +208,10 @@ class TectronixTDS:
         if ip is not None:
             self.ip = ip
         self.connected = False
+        self.reconnect_time = 0.0
         self.connection = None
         self.connection = tec_connect(self.ip, 1.0)
+        self.connected = True
         self.plots = {}
         self.isf = {}
         self.tec_type = ''
@@ -213,22 +219,6 @@ class TectronixTDS:
         self.set_config()
         self.logger.debug('%s at %s has been initialized %s %6.3f s', self.tec_type, self.ip, self.last_aq,
                           time.time() - t0)
-
-    def send_command(self, cmd):
-        t0 = time.time()
-        try:
-            result = tec_send_command(self.connection, cmd)
-            self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time() - t0)
-            return result
-        except (socket.timeout, http.client.CannotSendRequest):
-            self.connected = False
-            return None
-
-    def get_data(self, ch_n):
-        return tec_get_data(self.connection, ch_n)
-
-    def get_image(self):
-        return tec_get_image(self.connection)
 
     def set_config(self, config=None):
         t0 = time.time()
@@ -257,6 +247,44 @@ class TectronixTDS:
         if 'ACQuire:NUMACq' not in self.config:
             self.config['ACQuire:NUMACq'] = self.send_command('ACQuire:NUMACq?')
         self.last_aq = self.config['ACQuire:NUMACq']
+
+    def send_command(self, cmd):
+        self.reconnect()
+        t0 = time.time()
+        try:
+            result = tec_send_command(self.connection, cmd)
+            self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time() - t0)
+            return result
+        except (socket.timeout, http.client.CannotSendRequest):
+            self.disconnect()
+            return None
+
+    def connect(self):
+        self.connection = tec_connect(self.ip, 1.0)
+        self.connected = True
+        self.logger.debug('Connected')
+
+    def disconnect(self):
+        if self.connection is not None:
+            self.connection.close()
+        self.connected = False
+        self.reconnect_time = time.time() + 2.0
+        self.logger.debug('Disconnected')
+
+    def reconnect(self):
+        if self.connected:
+            return True
+        if self.reconnect_time > time.time():
+            self.connect()
+            return self.connected
+        else:
+            return False
+
+    def get_data(self, ch_n):
+        return tec_get_data(self.connection, ch_n)
+
+    def get_image(self):
+        return tec_get_image(self.connection)
 
     def combine_commands(self, commands):
         combined = ''
@@ -401,21 +429,26 @@ class MainWindow(QMainWindow):
             self.devices[d] = TectronixTDS(ip=d, config=devices[d])
             # self.devices[d].start_aq()
         self.device = list(self.devices.values())[0]
-        v = self.device.config['SELect:CH1'] == '1'
+        sel = self.device.config['SELect?'].split(';')
+        v = sel[0] == '1'
         self.checkBox_1.setChecked(v)
-        v = self.device.config['SELect:CH2'] == '1'
+        v = sel[1] == '1'
         self.checkBox_2.setChecked(v)
-        v = self.device.config['SELect:CH3'] == '1'
+        v = sel[2] == '1'
         self.checkBox_3.setChecked(v)
-        v = self.device.config['SELect:CH4'] == '1'
+        v = sel[3] == '1'
         self.checkBox_4.setChecked(v)
-        v = self.device.send_command('CH1:SCAle?')
+        v = self.device.config['CH1?'].split(';')[0]
+        # v = self.device.send_command('CH1:SCAle?')
         self.lineEdit_11.setText(v)
-        v = self.device.send_command('CH2:SCAle?')
+        v = self.device.config['CH2?'].split(';')[0]
+        # v = self.device.send_command('CH2:SCAle?')
         self.lineEdit_12.setText(v)
-        v = self.device.send_command('CH3:SCAle?')
+        v = self.device.config['CH3?'].split(';')[0]
+        # v = self.device.send_command('CH3:SCAle?')
         self.lineEdit_13.setText(v)
-        v = self.device.send_command('CH4:SCAle?')
+        v = self.device.config['CH4?'].split(';')[0]
+        # v = self.device.send_command('CH4:SCAle?')
         self.lineEdit_14.setText(v)
         v = self.device.send_command('HORizontal:MAIn:SCAle?')
         self.lineEdit_15.setText(v)
