@@ -147,9 +147,16 @@ class MainWindow(QMainWindow):
 
         x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
         y = numpy.sin(x)
-        self.graphicsView.getViewBox().setBackgroundColor('#1d648da0')
-        self.graphicsView.getPlotItem().showGrid(True, True)
-        self.graphicsView.plot(x, y, pen={'color': 'g', 'width': 2})
+        self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
+        self.frame_3.layout().addWidget(self.plotWidget)
+        # self.plotWidget.getViewBox().setBackgroundColor('k')
+        f = self.plotWidget.font()
+        f.setPointSize(20)
+        self.plotWidget.setFont(f)
+        self.plotWidget.getViewBox().setBackgroundColor('#1d648da0')
+        self.plotWidget.getPlotItem().showGrid(True, True)
+        self.plotWidget.plot(x, y, pen={'color': 'g', 'width': 2})
+        self.plot = self.plotWidget.plot
 
     def erase(self):
         self.mplw.canvas.ax.clear()
