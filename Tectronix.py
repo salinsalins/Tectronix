@@ -294,15 +294,16 @@ class TectronixTDS:
             return True
         return False
 
+    def is_armed(self):
+        st = self.send_command('TRIGger:STATE?').upper()
+        return st.startswith('ARMED') or st.startswith('READY')
+
     def start_aq(self):
         if self.send_command('ACQuire:STATE 0') is None:
             return
         self.send_command('ACQuire:STATE 1')
         self.last_aq = self.send_command('ACQuire:NUMACq?')
-        st = self.send_command('TRIGger:STATE?')
-        if st.upper().startswith('ARMED'):
-            return True
-        return False
+        return self.is_armed()
 
     def stop_aq(self):
         self.send_command('ACQuire:STATE 0')
@@ -348,6 +349,28 @@ class TectronixTDS:
         if result == "1":
             return True
         return False
+
+    def get_channel_scale(self, n):
+        v = self.send_command('CH%s:SCAle?'%n)
+        if v is not None:
+            return float(v)
+        return None
+
+    def set_channel_scale(self, n, scale):
+        v = self.send_command('CH%s:SCAle %s'%(n, scale))
+        return v is not None
+
+    def get_channel_offset(self, n):
+        v = self.send_command('CH%s:OFFSet?'%n)
+        if v is not None:
+            return float(v)
+        return None
+
+    def set_channel_offset(self, n, offset):
+        if n < 1 or n > 4:
+            return None
+        v = self.send_command('CH%s:OFFSet %s'%(n, offset))
+        return v is not None
 
 
 # tec_ip = "192.168.1.222"

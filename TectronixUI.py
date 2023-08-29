@@ -76,6 +76,19 @@ class MainWindow(QMainWindow):
         self.mplw = MplWidget()
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
+        self.mplw.getViewBox().setBackgroundColor('#1d648da0')
+        # font = QFont('Open Sans', 14, weight=QFont.Bold)
+        font = QFont('Open Sans', 16)
+        self.mplw.getPlotItem().getAxis("bottom").setTickFont(font)
+        self.mplw.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
+        self.mplw.getPlotItem().getAxis("bottom").label.setFont(font)
+        self.mplw.getPlotItem().getAxis("left").setTickFont(font)
+        self.mplw.getPlotItem().getAxis("left").label.setFont(font)
+        self.mplw.getPlotItem().showGrid(True, True)
+        self.mplw.getPlotItem().setLabel('bottom', 'Time', units='s')
+        self.mplw.getPlotItem().setLabel('left', 'Signal', units='div')
+        self.plot = self.mplw.plot
+
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
@@ -140,30 +153,31 @@ class MainWindow(QMainWindow):
         self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
 
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
+        self.pushButton_6.clicked.connect(self.single_seq_pressed)
 
         self.pushButton_4.toggled.connect(self.run_toggled)
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
-        x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
-        y = numpy.sin(x)
-        self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
-        self.frame_3.layout().addWidget(self.plotWidget)
-        # self.plotWidget.getViewBox().setBackgroundColor('k')
-        self.plotWidget.getViewBox().setBackgroundColor('#1d648da0')
-        # font = QFont('Open Sans', 14, weight=QFont.Bold)
-        font = QFont('Open Sans', 16)
-        self.plotWidget.getPlotItem().getAxis("bottom").setTickFont(font)
-        self.plotWidget.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
-        self.plotWidget.getPlotItem().getAxis("left").setTickFont(font)
-        self.plotWidget.getPlotItem().showGrid(True, True)
-        self.plotWidget.getPlotItem().getAxis("bottom").label.setFont(font)
-        self.plotWidget.getPlotItem().setLabel('bottom', 'Time', units='s')
-        self.plotWidget.getPlotItem().getAxis("left").label.setFont(font)
-        # self.plotWidget.getPlotItem().getAxis("left").setStyle(tickTextWidth=320, tickTextHeight=320)
-        self.plotWidget.getPlotItem().setLabel('left', 'Signal', units='div')
-        self.plotWidget.plot(x, y, pen={'color': 'g', 'width': 2})
-        self.plot = self.plotWidget.plot
+        # x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
+        # y = numpy.sin(x)
+        # self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
+        # self.frame_3.layout().addWidget(self.plotWidget)
+        # # self.plotWidget.getViewBox().setBackgroundColor('k')
+        # self.plotWidget.getViewBox().setBackgroundColor('#1d648da0')
+        # # font = QFont('Open Sans', 14, weight=QFont.Bold)
+        # font = QFont('Open Sans', 16)
+        # self.plotWidget.getPlotItem().getAxis("bottom").setTickFont(font)
+        # self.plotWidget.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
+        # self.plotWidget.getPlotItem().getAxis("left").setTickFont(font)
+        # self.plotWidget.getPlotItem().showGrid(True, True)
+        # self.plotWidget.getPlotItem().getAxis("bottom").label.setFont(font)
+        # self.plotWidget.getPlotItem().setLabel('bottom', 'Time', units='s')
+        # self.plotWidget.getPlotItem().getAxis("left").label.setFont(font)
+        # # self.plotWidget.getPlotItem().getAxis("left").setStyle(tickTextWidth=320, tickTextHeight=320)
+        # self.plotWidget.getPlotItem().setLabel('left', 'Signal', units='div')
+        # self.plotWidget.plot(x, y, pen={'color': 'g', 'width': 2})
+        # self.plot = self.plotWidget.plot
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -242,26 +256,32 @@ class MainWindow(QMainWindow):
         else:
             self.device.send_command('SELect:CH4 0')
 
+    def turn_red(self):
+        self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
+
+    def turn_green(self):
+        self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+
     def run_toggled(self):
         if self.pushButton_4.isChecked():
             self.device.start_aq()
             self.pushButton_4.setText('Stop')
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+            self.turn_green()
+            # self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
             self.rearm = True
         else:
             self.device.stop_aq()
             self.pushButton_4.setText('Run')
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
+            self.turn_red()
             self.rearm = False
 
     def single_seq_pressed(self):
         self.device.stop_aq()
-        self.device.start_aq()
         if self.device.start_aq():
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+            self.turn_green()
             self.rearm = False
         else:
-            self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
+            self.turn_ref()
 
     def plot_data(self, data):
         # self.logger.debug('Entry')
@@ -336,6 +356,10 @@ class MainWindow(QMainWindow):
         t = time.strftime('%H:%M:%S')
         self.clock.setText(t)
         plots = {}
+        if self.device.is_armed():
+            self.turn_green()
+        else:
+            self.turn_red()
         if self.device.is_aq_finished():
             if self.device.connected:
                 plots = self.device.read_plots()
