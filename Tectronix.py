@@ -295,8 +295,10 @@ class TectronixTDS:
         return False
 
     def is_armed(self):
-        st = self.send_command('TRIGger:STATE?').upper()
-        return st.startswith('ARMED') or st.startswith('READY')
+        st = self.send_command('TRIGger:STATE?')
+        if st is not None:
+            return st.upper().startswith('ARMED') or st.startswith('READY')
+        return False
 
     def start_aq(self):
         if self.send_command('ACQuire:STATE 0') is None:
