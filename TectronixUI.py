@@ -186,8 +186,12 @@ class MainWindow(QMainWindow):
 
     def send_command_pressed(self):
         txt = self.lineEdit_2.text()
-        rsp = self.device.send_command(txt)
-        self.label_6.setText(rsp)
+        t0 = time.time()
+        self.device.send_command(txt)
+        dt = time.time() - t0
+        self.label_11.setText("%5.3f" % dt)
+        self.lineEdit_3.setText(str(self.device.response[0]))
+        # self.label_6.setText(self.device.response[0])
 
     def force_trigger_pressed(self):
         self.device.send_command('TRIG FORC')

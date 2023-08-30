@@ -485,7 +485,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
+      <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0,0,0">
        <item>
         <widget class="QLabel" name="label_4">
          <property name="sizePolicy">
@@ -592,16 +592,16 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_6">
+        <widget class="QLineEdit" name="lineEdit_3">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
           </size>
          </property>
@@ -611,8 +611,34 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_11">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_12">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>s</string>
          </property>
         </widget>
        </item>
@@ -749,6 +775,9 @@
        </item>
        <item>
         <widget class="QComboBox" name="comboBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -763,17 +792,17 @@
          </property>
          <item>
           <property name="text">
+           <string>Signal</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>FFT</string>
           </property>
          </item>
          <item>
           <property name="text">
            <string>Cumulative</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Signal</string>
           </property>
          </item>
         </widget>

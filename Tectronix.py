@@ -31,16 +31,24 @@ def tec_send_command(connection, cmd, raw_response=False):
     connection.request("POST", "/Comm.html", params, headers)
     response = connection.getresponse()
     if response.status != 200:
+        if raw_response:
+            return None, response.status, None
         return None
     data = tec_read_response_data(response)
     n = data.find('<TEXTAREA')
     if n < 0:
+        if raw_response:
+            return None, response.status, data
         return None
     n1 = data[n:].find('>')
     if n1 < 0:
+        if raw_response:
+            return None, response.status, data
         return None
     m = data.find('</TEXTAREA')
     if m < 0:
+        if raw_response:
+            return None, response.status, data
         return None
     if raw_response:
         return data[n + n1 + 1:m], response.status, data
@@ -178,7 +186,7 @@ class TectronixTDS:
         if ip is not None:
             self.ip = ip
         self.timeout = timeout
-        self.responce = ''
+        self.response = ''
         self.connected = False
         self.reconnect_time = time.time() + 5.0
         self.connection = None
@@ -188,6 +196,7 @@ class TectronixTDS:
         self.tec_type = ''
         self.last_aq = ''
         self.connect(timeout=timeout)
+        self.send_command('HEADer 0')
         self.set_config()
         if self.connected:
             self.logger.debug('%s at %s has been initialized (last_aq=%s) in %6.3f s',
@@ -232,11 +241,16 @@ class TectronixTDS:
             return None
         t0 = time.time()
         result = None
+        self.response = ('None', None, None)
         try:
-            result = tec_send_command(self.connection, cmd)
-            self.responce = result
+            result, status, data = tec_send_command(self.connection, cmd, True)
+            self.response = (result, status, data)
             if result is not None:
-                # result = result.split(' ')[1]
+                result = result.strip()
+                if result.startswith(':'):
+                    tec_send_command(self.connection, 'HEADer 0')
+                    result = tec_send_command(self.connection, cmd)
+                    result = result.strip()
                 if cmd.endswith('?'):
                     self.config[cmd] = result
         except KeyboardInterrupt:
