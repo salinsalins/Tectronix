@@ -22,35 +22,35 @@ pyqtgraph.setConfigOption('foreground', 'k')
 
 
 class CustomViewBox(pyqtgraph.ViewBox):
-    MENU = ['Hide plot', 'Show new plot', 'Show plot (all)']
+    MENU = []
     def __init__(self, parent=None, *args, **kwds):
         super().__init__(parent, *args, **kwds)
         self.setMouseMode(self.RectMode)
         self.setBackgroundColor('#1d648da0')
-        # self.setBorder(pen=('green', 5))
         self.my_menu = QMenu()
         # self.my_menu.setTitle("Double click test menu")
         # self.my_menu.addAction('Plot Info')
         # self.my_menu.addSeparator()
-        self.my_menu.addAction(self.MENU[0])
-        self.my_menu.addAction(self.MENU[1])
-        self.my_menu.addSeparator()
-        self.my_menu.addAction(self.MENU[2])
+        for m in self.MENU:
+            if m:
+                self.my_menu.addAction(m)
+            else:
+                self.my_menu.addSeparator()
 
     # reimplement right-click to zoom out
     def mouseClickEvent(self, ev):
         if ev.double() and ev.button() == QtCore.Qt.LeftButton:
             ev.accept()
             # self.my_menu.popup(ev.screenPos().toPoint())
-            action = self.my_menu.exec(ev.screenPos().toPoint())
-            if action is None:
-                return
-            if action.text() == self.MENU[0]:
-                self.mplw.my_action.hide_plot(self.mplw.my_name, self.mplw.my_index)
-            elif action.text() == self.MENU[1]:
-                self.mplw.my_action.show_plot(self.mplw.my_name, self.mplw.my_index)
-            elif action.text() == self.MENU[2]:
-                self.mplw.my_action.show_plot_on_right(self.mplw.my_name, self.mplw.my_index)
+            # action = self.my_menu.exec(ev.screenPos().toPoint())
+            # if action is None:
+            #     return
+            # if action.text() == self.MENU[0]:
+            #     self.mplw.my_action.hide_plot(self.mplw.my_name, self.mplw.my_index)
+            # elif action.text() == self.MENU[1]:
+            #     self.mplw.my_action.show_plot(self.mplw.my_name, self.mplw.my_index)
+            # elif action.text() == self.MENU[2]:
+            #     self.mplw.my_action.show_plot_on_right(self.mplw.my_name, self.mplw.my_index)
         elif ev.button() == QtCore.Qt.RightButton:
             ev.accept()
             if ev.double():

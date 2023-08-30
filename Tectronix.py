@@ -237,11 +237,11 @@ class TectronixTDS:
         self.last_aq = self.config['ACQuire:NUMACq']
 
     def send_command(self, cmd):
+        result = None
+        self.response = ('None', None, None)
         if not self.reconnect():
             return None
         t0 = time.time()
-        result = None
-        self.response = ('None', None, None)
         try:
             result, status, data = tec_send_command(self.connection, cmd, True)
             self.response = (result, status, data)
