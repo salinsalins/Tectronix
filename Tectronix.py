@@ -9,6 +9,8 @@ s='s=%r;print(s%%s)';print(s%s)
 import http.client
 import io
 import socket
+import threading
+
 from PIL import Image
 import sys
 import time
@@ -179,6 +181,7 @@ class TectronixTDS:
             self.logger = config_logger()
         else:
             self.logger = logger
+        self.lock = threading.Lock()
         self.config = {}
         if config is not None:
             self.config = config
@@ -243,7 +246,8 @@ class TectronixTDS:
             return None
         t0 = time.time()
         try:
-            result, status, data = tec_send_command(self.connection, cmd, True)
+            with self.lock:
+                result, status, data = tec_send_command(self.connection, cmd, True)
             self.response = (result, status, data)
             if result is not None:
                 result = result.strip()
@@ -261,7 +265,8 @@ class TectronixTDS:
         return result
 
     def connect(self, timeout=2.0):
-        self.connection = tec_connect(self.ip, timeout=timeout)
+        with self.lock:
+            self.connection = tec_connect(self.ip, timeout=timeout)
         self.connected = True
         self.config['*idn?'] = self.send_command('*idn?')
         if not self.connected:
@@ -273,7 +278,8 @@ class TectronixTDS:
         if not self.connected:
             return
         if self.connection is not None:
-            self.connection.close()
+            with self.lock:
+                self.connection.close()
         self.connected = False
         self.reconnect_time = time.time() + 5.0
         self.logger.debug('Disconnected')
@@ -290,14 +296,16 @@ class TectronixTDS:
             return False
 
     def get_data(self, ch_n):
-        if not self.connected:
-            return
-        return tec_get_trace(self.connection, ch_n)
+        with self.lock:
+            if not self.connected:
+                return
+            return tec_get_trace(self.connection, ch_n)
 
     def get_image(self):
-        if not self.connected:
-            return
-        return tec_get_image(self.connection)
+        with self.lock:
+            if not self.connected:
+                return
+            return tec_get_image(self.connection)
 
     # def combine_commands(self, commands):
     #     combined = ''

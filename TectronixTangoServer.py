@@ -51,17 +51,17 @@ class TectronixTangoServer(TangoServerPrototype):
                                  unit="s/div", format="%f",
                                  doc="Horizontal scale in sec / div")
 
-    # record_in_progress = attribute(label="record_in_progress", dtype=bool,
-    #                                display_level=DispLevel.OPERATOR,
-    #                                access=AttrWriteType.READ_WRITE,
-    #                                unit="", format="",
-    #                                doc="Is record operation in progress")
+    record_in_progress = attribute(label="record_in_progress", dtype=bool,
+                                   display_level=DispLevel.OPERATOR,
+                                   access=AttrWriteType.READ_WRITE,
+                                   unit="", format="",
+                                   doc="Is record operation in progress")
 
-    # data_ready = attribute(label="data_ready", dtype=bool,
-    #                        display_level=DispLevel.OPERATOR,
-    #                        access=AttrWriteType.READ,
-    #                        unit="", format="",
-    #                        doc="Is data ready for reading")
+    data_ready = attribute(label="data_ready", dtype=bool,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ,
+                           unit="", format="",
+                           doc="Is data ready for reading")
 
     # ch1_scale = attribute(label="channel1_scale", dtype=float,
     #                       display_level=DispLevel.OPERATOR,
@@ -185,26 +185,14 @@ class TectronixTangoServer(TangoServerPrototype):
         self.tec = None
         self.cx = [empty_array] * 4
         self.cy = [empty_array] * 4
-        self.x1 = empty_array
-        self.x2 = empty_array
-        self.x3 = empty_array
-        self.x4 = empty_array
-        self.y1 = empty_array
-        self.y2 = empty_array
-        self.y3 = empty_array
-        self.y4 = empty_array
         self.hor_sc = 1.0
         self.trig_val = 0.0
-        self.ch1_sc = 0.0
-        self.ch2_sc = 0.0
-        self.ch3_sc = 0.0
-        self.ch4_sc = 0.0
-        self.ch1_of = 0.0
-        self.ch2_of = 0.0
-        self.ch3_of = 0.0
-        self.ch4_of = 0.0
-        self.device_type_str = "Unknown Tectronix device"
+        self.scles = [0.0] * 4
+        self.offsets = [0.0] * 4
+        self.device_type_value = "Unknown Tectronix device"
         self.device_name = ''
+        self.record_start_time = 0.0
+        self.record_stop_time = 0.0
         self.record_initiated = False
         self.data_ready_value = False
         self.init_result = None
@@ -221,11 +209,13 @@ class TectronixTangoServer(TangoServerPrototype):
 
     def set_config(self):
         try:
+            super().set_config()
+            #
+            self.pre = f'{self.name} Tectronix server'
             self.device_name = self.get_name()
-            self.set_state(DevState.INIT)
-            self.set_status('Initialization')
-            self.reconnect_enabled = self.config.get('auto_reconnect', False)
-            # create Tectronix oscilloscope1000 device
+            self.set_state(DevState.INIT, 'Initialization')
+            # self.reconnect_enabled = self.config.get('auto_reconnect', False)
+            # create Tectronix oscilloscope device
             ip = self.config.get('ip', '192.168.1.222')
             config = self.config.get('settings', {})
             if isinstance(config, str):
@@ -233,33 +223,31 @@ class TectronixTangoServer(TangoServerPrototype):
             self.tec = TectronixTDS(ip=ip, config=config)
             # change device logger to class logger
             self.tec.logger = self.logger
-            self.device_type_str = self.tec.tec_type
-            #
-            super().set_config()
+            self.device_type_value = self.tec.tec_type
             #
             if self.connected:
                 if self.read_horizontal_scale() is None:
                     return False
                 self.horizontal_scale.set_write_value(self.hor_sc)
-                if self.read_trigger() is None:
+                if self.read_trigger_position() is None:
                     return False
                 self.trigger_position.set_write_value(self.trig_val)
                 self.init_result = None
-                msg = '%s %s has been initialized' % (self.device_name, self.device_type_str)
+                msg = '%s %s has been initialized' % (self.device_name, self.device_type_value)
                 self.logger.debug(msg)
-                self.set_state(DevState.STANDBY, 'Tectronix oscilloscope has been initialized successfully')
+                self.set_state(DevState.STANDBY, msg)
                 return True
             else:
-                msg = '%s %s initialization error' % (self.device_name, self.device_type_str)
+                msg = '%s %s initialization error' % (self.device_name, self.device_type_value)
                 self.logger.warning(msg)
-                self.set_state(DevState.FAULT, 'Tectronix oscilloscope initialization error')
+                self.set_state(DevState.FAULT, 'initialization error')
                 return False
         except KeyboardInterrupt:
             raise
         except Exception as ex:
             self.init_result = ex
             log_exception(self, 'Exception initiating Tectronix oscilloscope %s', self.device_name)
-            self.set_state(DevState.FAULT, 'Tectronix oscilloscope initialization error')
+            self.set_state(DevState.FAULT, 'initialization error')
             return False
 
     def delete_device(self):
@@ -277,8 +265,7 @@ class TectronixTangoServer(TangoServerPrototype):
         #     pass
         self.record_initiated = False
         self.data_ready_value = False
-        self.set_state(DevState.CLOSE)
-        self.set_status('Tectronix oscilloscope has been stopped')
+        self.set_state(DevState.CLOSE, 'has been stopped')
         msg = '%s Tectronix oscilloscope has been deleted' % self.device_name
         self.logger.info(msg)
 
@@ -296,6 +283,7 @@ class TectronixTangoServer(TangoServerPrototype):
             raise
         except:
             self.log_exception()
+            self.hor_sc = float('nan')
         return self.hor_sc
 
     def write_horizontal_scale(self, v):
@@ -327,7 +315,32 @@ class TectronixTangoServer(TangoServerPrototype):
             self.log_exception()
 
     def read_tecronix_type(self):
-        return self.device_type_str
+        return self.device_type_value
+
+    def read_data_ready(self):
+        self.data_ready_value = self.tec.is_aq_finished()
+        return self.data_ready_value
+
+    def read_record_in_progress(self):
+        return self.record_initiated
+
+    def write_record_in_progress(self, value: bool):
+        if value:
+            if self.record_initiated:
+                return
+            else:
+                self.start_recording()
+        else:
+            if self.record_initiated:
+                self.stop_recording()
+            else:
+                return
+
+    def read_start_time(self):
+        return self.record_start_time
+
+    def read_stop_time(self):
+        return self.record_stop_time
 
 
 
@@ -369,30 +382,6 @@ class TectronixTangoServer(TangoServerPrototype):
     def write_ch1_offset(self, v):
         self.tec.set_channel_offset(1, v)
 
-    def read_record_in_progress(self):
-        return self.tec.send_command('BUSY?') == '1'
-
-    def write_record_in_progress(self, value: bool):
-        if value:
-            if self.record_initiated:
-                return
-            else:
-                self.start_recording()
-        else:
-            if self.record_initiated:
-                self.stop_recording()
-            else:
-                return
-
-    def read_data_ready(self):
-        return self.data_ready_value
-
-    def read_start_time(self):
-        return self.recording_start_time
-
-    def read_stop_time(self):
-        return self.recording_stop_time
-
     def read_chany01(self):
         return self.y1
 
@@ -419,7 +408,7 @@ class TectronixTangoServer(TangoServerPrototype):
 
     @command(dtype_in=None, dtype_out=bool)
     def start_recording(self):
-        if self.tec.is_record_in_proress():
+        if self.record_initiated:
             msg = '%s Can not start - record in progress' % self.device_name
             self.logger.info(msg)
             return False
@@ -430,7 +419,7 @@ class TectronixTangoServer(TangoServerPrototype):
             return False
         self.record_initiated = True
         self.data_ready_value = False
-        self.start_time = time.time()
+        self.record_start_time = time.time()
         self.set_state(DevState.RUNNING, 'Recording is in progress')
         msg = '%s Recording started' % self.device_name
         self.logger.debug(msg)
@@ -439,8 +428,8 @@ class TectronixTangoServer(TangoServerPrototype):
     @command(dtype_in=None)
     def stop_recording(self):
         if not self.tec.stop_aq():
-            self.record_initiated = False
-            self.data_ready_value = False
+            # self.record_initiated = False
+            # self.data_ready_value = False
             self.set_state(DevState.FAULT)
             self.set_status('Recording stop error')
             log_exception(self, '%s Recording stop error' % self.device_name, level=logging.WARNING)
@@ -449,18 +438,22 @@ class TectronixTangoServer(TangoServerPrototype):
         self.set_status('Recording has been stopped')
         self.logger.info('%s Recording has been stopped' % self.device_name)
         self.record_initiated = False
-        self.data_ready_value = False
+        # self.data_ready_value = False
+
+    @command(dtype_in=str, dtype_out=str)
+    def send_command(self, cmd):
+        return self.tec.send_command(cmd)
 
     def reconnect(self):
         self.tec.reconnect()
-        if self.tec.cnnected:
-            self.set_state(DevState.STANDBY)
-            self.set_status('Reconnected successfully')
-            self.logger.info('Reconnected successfully')
-        else:
-            self.set_state(DevState.FAULT)
-            self.set_status('Reconnection Error')
-            self.logger.warning('Reconnection Error')
+        # if self.tec.connected:
+        #     self.set_state(DevState.STANDBY)
+        #     self.set_status('Reconnected successfully')
+        #     self.logger.info('Reconnected successfully')
+        # else:
+        #     self.set_state(DevState.FAULT)
+        #     self.set_status('Reconnection Error')
+        #     self.logger.warning('Reconnection Error')
 
     def read(self):
         plots = self.tec.read_plots()
@@ -474,18 +467,19 @@ class TectronixTangoServer(TangoServerPrototype):
                 self.cy[i] = empty_array
 
 def looping():
-    global t0
-    time.sleep(0.010)
+    # global t0
+    time.sleep(0.50)
     for dev in TectronixTangoServer.device_list:
         time.sleep(0.010)
-        if time.time() - t0 > 1.0:
-            t0 = time.time()
-            dev.reconnect()
+        # if time.time() - t0 > 1.0:
+        #     t0 = time.time()
+        #     dev.reconnect()
         if dev.record_initiated:
             try:
-                if dev.data_ready:
+                if dev.read_data_ready():
                     msg = '%s Recording finished, data is ready' % dev.device_name
                     dev.logger.info(msg)
+                    dev.record_stop_time = time.time()
                     dev.read()
             except KeyboardInterrupt:
                 raise
