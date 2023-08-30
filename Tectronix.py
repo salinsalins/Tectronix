@@ -24,7 +24,7 @@ def tec_connect(ip, timeout=None):
     return connection
 
 
-def tec_send_command(connection, cmd):
+def tec_send_command(connection, cmd, raw_response=False):
     params = ('COMMAND=' + cmd + '\n\rgpibsend=Send\n\rname=\n\r').encode()
     headers = {"Content-type": "text/plain",
                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"}
@@ -32,6 +32,22 @@ def tec_send_command(connection, cmd):
     response = connection.getresponse()
     if response.status != 200:
         return None
+    data = tec_read_response_data(response)
+    n = data.find('<TEXTAREA')
+    if n < 0:
+        return None
+    n1 = data[n:].find('>')
+    if n1 < 0:
+        return None
+    m = data.find('</TEXTAREA')
+    if m < 0:
+        return None
+    if raw_response:
+        return data[n + n1 + 1:m], response.status, data
+    return data[n + n1 + 1:m]
+
+
+def tec_read_response_data(response):
     data = b''
     while True:
         d = response.read(1024)
@@ -39,16 +55,7 @@ def tec_send_command(connection, cmd):
             break
         data += d
     data = data.decode()
-    n = data.find('<TEXTAREA')
-    if n < 0:
-        return None
-    n1 = data[n:].find('>')
-    if n1 < 0:
-        return None
-    m = data.find('</TEXTAREA>')
-    if m < 0:
-        return None
-    return data[n + n1 + 1:m]
+    return data
 
 
 def tec_get_image(connection):
@@ -83,7 +90,7 @@ def tec_get_isf(connection, chan_number):
     return data
 
 
-def tec_get_data(connection, chan_number):
+def tec_get_trace(connection, chan_number):
     isf = tec_get_isf(connection, chan_number)
     x, y, h = isfread(io.BytesIO(isf))
     return x, y, h, isf
@@ -91,6 +98,8 @@ def tec_get_data(connection, chan_number):
 
 class TectronixTDS:
     default = {
+        'VERBose': '0',  # 1 | 0 | ON | OFF
+        'HEADer': '0',  # 1 | 0 | ON | OFF
         # '*LRN?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
         'ACQuire:STOPAfter': 'SEQ',  # RUNSTop | SEQuence
@@ -169,6 +178,7 @@ class TectronixTDS:
         if ip is not None:
             self.ip = ip
         self.timeout = timeout
+        self.responce = ''
         self.connected = False
         self.reconnect_time = time.time() + 5.0
         self.connection = None
@@ -221,17 +231,20 @@ class TectronixTDS:
         if not self.reconnect():
             return None
         t0 = time.time()
+        result = None
         try:
             result = tec_send_command(self.connection, cmd)
-            if cmd.endswith('?'):
-                self.config[cmd] = result
-            self.logger.debug('%s -> %s %5.3f s', cmd, result, time.time() - t0)
-            return result
+            self.responce = result
+            if result is not None:
+                # result = result.split(' ')[1]
+                if cmd.endswith('?'):
+                    self.config[cmd] = result
         except KeyboardInterrupt:
             raise
         except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
             self.disconnect()
-            return None
+        self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
+        return result
 
     def connect(self, timeout=2.0):
         self.connection = tec_connect(self.ip, timeout=timeout)
@@ -265,7 +278,7 @@ class TectronixTDS:
     def get_data(self, ch_n):
         if not self.connected:
             return
-        return tec_get_data(self.connection, ch_n)
+        return tec_get_trace(self.connection, ch_n)
 
     def get_image(self):
         if not self.connected:
@@ -330,8 +343,8 @@ class TectronixTDS:
         for i in range(4):
             if sel[i] == '1':
                 # if self.send_command('SELect:CH%s?'%ch) == '1':
-                x, y, h, isf = self.get_data(i+1)
-                self.plots[i+1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
+                x, y, h, isf = self.get_data(i + 1)
+                self.plots[i + 1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
         return self.plots
 
     def enable_channel(self, n):
@@ -353,17 +366,17 @@ class TectronixTDS:
         return False
 
     def get_channel_scale(self, n):
-        v = self.send_command('CH%s:SCAle?'%n)
+        v = self.send_command('CH%s:SCAle?' % n)
         if v is not None:
             return float(v)
         return None
 
     def set_channel_scale(self, n, scale):
-        v = self.send_command('CH%s:SCAle %s'%(n, scale))
+        v = self.send_command('CH%s:SCAle %s' % (n, scale))
         return v is not None
 
     def get_channel_offset(self, n):
-        v = self.send_command('CH%s:OFFSet?'%n)
+        v = self.send_command('CH%s:OFFSet?' % n)
         if v is not None:
             return float(v)
         return None
@@ -371,9 +384,8 @@ class TectronixTDS:
     def set_channel_offset(self, n, offset):
         if n < 1 or n > 4:
             return None
-        v = self.send_command('CH%s:OFFSet %s'%(n, offset))
+        v = self.send_command('CH%s:OFFSet %s' % (n, offset))
         return v is not None
-
 
 # tec_ip = "192.168.1.222"
 
