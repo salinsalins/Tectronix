@@ -26,7 +26,7 @@ empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 
 class TectronixTangoServer(TangoServerPrototype):
-    server_version_value = '0.1'
+    server_version_value = '1.0'
     server_name_value = 'Tectronix oscilloscope (TDS3014) Tango device server'
     device_list = []
 
@@ -38,17 +38,17 @@ class TectronixTangoServer(TangoServerPrototype):
                               doc="Type of Tectronix oscilloscope")
 
     trigger_position = attribute(label="trigger", dtype=float,
-                        display_level=DispLevel.OPERATOR,
+                                 display_level=DispLevel.OPERATOR,
                                  min_value=-50.0, max_value=100.0,
                                  access=AttrWriteType.READ_WRITE,
-                        unit="%", format="%5.1f",
-                        doc="Trigger position % of screen")
+                                 unit="%", format="%5.1f",
+                                 doc="Trigger position % of screen")
 
     horizontal_scale = attribute(label="horizontal_scale", dtype=float,
                                  display_level=DispLevel.OPERATOR,
                                  min_value=1.0e-7, max_value=10.0,
                                  access=AttrWriteType.READ_WRITE,
-                                 unit="s/div", format="%f",
+                                 unit="s/div", format="%12.6f",
                                  doc="Horizontal scale in sec / div")
 
     record_in_progress = attribute(label="record_in_progress", dtype=bool,
@@ -63,43 +63,49 @@ class TectronixTangoServer(TangoServerPrototype):
                            unit="", format="",
                            doc="Is data ready for reading")
 
-    # ch1_scale = attribute(label="channel1_scale", dtype=float,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ_WRITE,
-    #                       min_value=1.0e-6, max_value=5.0,
-    #                       unit="V/div", format="%f",
-    #                       doc='Vertical scale the channel in Volts per division')
+    force_trigger = attribute(label="force_trigger", dtype=bool,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.WRITE,
+                          unit="", format="",
+                          doc='Force trigger')
 
-    # ch1_offset = attribute(label="channel1_offset", dtype=float,
-    #                        display_level=DispLevel.OPERATOR,
-    #                        access=AttrWriteType.READ_WRITE,
-    #                        min_value=-5.0, max_value=5.0,
-    #                        unit="div", format="%f",
-    #                        doc='Vertical offset for the channel in divisions')
+    ch1_scale = attribute(label="channel1_scale", dtype=float,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          min_value=1.0e-6, max_value=5.0,
+                          unit="V/div", format="%12.6f",
+                          doc='Vertical scale the channel in Volts per division')
 
-    # ch1_state = attribute(label="channel1_state", dtype=bool,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ_WRITE,
-    #                       unit="", format="%s",
-    #                       doc='Enable/Disable state of the channel')
+    ch1_offset = attribute(label="channel1_offset", dtype=float,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ_WRITE,
+                           min_value=-5.0, max_value=5.0,
+                           unit="div", format="%5.2f",
+                           doc='Vertical offset for the channel in divisions')
 
-    # ch2_state = attribute(label="channel2_state", dtype=bool,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ_WRITE,
-    #                       unit="", format="%s",
-    #                       doc='Enable/Disable state of the channel')
+    ch1_state = attribute(label="channel1_state", dtype=bool,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          unit="", format="",
+                          doc='Enable/Disable state of the channel')
 
-    # ch3_state = attribute(label="channel3_state", dtype=bool,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ_WRITE,
-    #                       unit="", format="%s",
-    #                       doc='Enable/Disable state of the channel')
+    ch2_state = attribute(label="channel2_state", dtype=bool,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          unit="", format="",
+                          doc='Enable/Disable state of the channel')
 
-    # ch4_state = attribute(label="channel4_state", dtype=bool,
-    #                       display_level=DispLevel.OPERATOR,
-    #                       access=AttrWriteType.READ_WRITE,
-    #                       unit="", format="%s",
-    #                       doc='Enable/Disable state of the channel')
+    ch3_state = attribute(label="channel3_state", dtype=bool,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          unit="", format="",
+                          doc='Enable/Disable state of the channel')
+
+    ch4_state = attribute(label="channel4_state", dtype=bool,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          unit="", format="",
+                          doc='Enable/Disable state of the channel')
 
     start_time = attribute(label="start_time", dtype=float,
                            display_level=DispLevel.OPERATOR,
@@ -121,32 +127,32 @@ class TectronixTangoServer(TangoServerPrototype):
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
-                        unit="V", format="%5.3f",
+                        unit="V", format="%12.6f",
                         doc="Channel 01 data in Volts")
 
-    # chany02 = attribute(label="Channel_02", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="V", format="%5.3f",
-    #                     doc="Channel 02 data in Volts")
+    chany02 = attribute(label="Channel_02", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="V", format="%12.6f",
+                        doc="Channel 02 data in Volts")
 
-    # chany03 = attribute(label="Channel_03", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="V", format="%5.3f",
-    #                     doc="Channel 03 data in Volts")
+    chany03 = attribute(label="Channel_03", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="V", format="%12.6f",
+                        doc="Channel 03 data in Volts")
 
-    # chany04 = attribute(label="Channel_04", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="V", format="%5.3f",
-    #                     doc="Channel 04 data in Volts")
+    chany04 = attribute(label="Channel_04", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="V", format="%12.6f",
+                        doc="Channel 04 data in Volts")
 
     # channels for ADC times 32 bit floats in s
     chanx01 = attribute(label="Channel_01_times", dtype=[numpy.float32],
@@ -154,32 +160,32 @@ class TectronixTangoServer(TangoServerPrototype):
                         max_dim_y=0,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
-                        unit="s", format="%5.3f",
+                        unit="s", format="%12.6f",
                         doc="Times for channel counts. 32 bit floats in s")
 
-    # chanx02 = attribute(label="Channel_02_times", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="s", format="%5.3f",
-    #                     doc="Times for channel counts. 32 bit floats in s")
+    chanx02 = attribute(label="Channel_02_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%12.6f",
+                        doc="Times for channel counts. 32 bit floats in s")
 
-    # chanx03 = attribute(label="Channel_03_times", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="s", format="%5.3f",
-    #                     doc="Times for channel counts. 32 bit floats in s")
+    chanx03 = attribute(label="Channel_03_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%12.6f",
+                        doc="Times for channel counts. 32 bit floats in s")
 
-    # chanx04 = attribute(label="Channel_04_times", dtype=[numpy.float32],
-    #                     max_dim_x=10000,
-    #                     max_dim_y=0,
-    #                     display_level=DispLevel.OPERATOR,
-    #                     access=AttrWriteType.READ,
-    #                     unit="s", format="%5.3f",
-    #                     doc="Times for channel counts. 32 bit floats in s")
+    chanx04 = attribute(label="Channel_04_times", dtype=[numpy.float32],
+                        max_dim_x=10000,
+                        max_dim_y=0,
+                        display_level=DispLevel.OPERATOR,
+                        access=AttrWriteType.READ,
+                        unit="s", format="%12.6f",
+                        doc="Times for channel counts. 32 bit floats in s")
 
     def init_device(self):
         self.tec = None
@@ -318,7 +324,6 @@ class TectronixTangoServer(TangoServerPrototype):
         return self.device_type_value
 
     def read_data_ready(self):
-        self.data_ready_value = self.tec.is_aq_finished()
         return self.data_ready_value
 
     def read_record_in_progress(self):
@@ -342,33 +347,29 @@ class TectronixTangoServer(TangoServerPrototype):
     def read_stop_time(self):
         return self.record_stop_time
 
+    def read(self):
+        self.logger.debug("Reading plots")
+        plots = self.tec.read_plots()
+        for i in range(4):
+            if i + 1 in plots:
+                p = plots[i + 1]
+                self.x[i] = p['x']
+                self.y[i] = p['y']
+            else:
+                self.x[i] = empty_array
+                self.y[i] = empty_array
+        self.data_ready_value = True
+        self.record_initiated = False
 
-
-
+    def write_force_trigger(self, v):
+        if v:
+            self.send_command('TRIG FORC')
 
     def read_ch1_state(self):
         return bool(self.tec.get_channel_state(1))
 
-    def read_ch2_state(self):
-        return self.tec.get_channel_state(2)
-
-    def read_ch3_state(self):
-        return self.tec.get_channel_state(3)
-
-    def read_ch4_state(self):
-        return self.tec.get_channel_state(4)
-
     def write_ch1_state(self, state):
         self.tec.set_channel_state(1, bool(state))
-
-    def write_ch2_state(self, state):
-        self.tec.set_channel_state(2, bool(state))
-
-    def write_ch3_state(self, state):
-        self.tec.set_channel_state(3, bool(state))
-
-    def write_ch4_state(self, state):
-        self.tec.set_channel_state(4, bool(state))
 
     def read_ch1_scale(self):
         return self.tec.get_channel_scale(1)
@@ -385,6 +386,27 @@ class TectronixTangoServer(TangoServerPrototype):
     def read_chany01(self):
         return self.y[0]
 
+    def read_chanx01(self):
+        return self.x[0]
+
+    def read_ch2_state(self):
+        return self.tec.get_channel_state(2)
+
+    def read_ch3_state(self):
+        return self.tec.get_channel_state(3)
+
+    def read_ch4_state(self):
+        return self.tec.get_channel_state(4)
+
+    def write_ch2_state(self, state):
+        self.tec.set_channel_state(2, bool(state))
+
+    def write_ch3_state(self, state):
+        self.tec.set_channel_state(3, bool(state))
+
+    def write_ch4_state(self, state):
+        self.tec.set_channel_state(4, bool(state))
+
     def read_chany02(self):
         return self.y[1]
 
@@ -393,9 +415,6 @@ class TectronixTangoServer(TangoServerPrototype):
 
     def read_chany04(self):
         return self.y[3]
-
-    def read_chanx01(self):
-        return self.x[0]
 
     def read_chanx02(self):
         return self.x[1]
@@ -415,7 +434,7 @@ class TectronixTangoServer(TangoServerPrototype):
         if not self.tec.start_aq():
             self.record_initiated = False
             self.set_state(DevState.FAULT, 'Recording start fault')
-            log_exception(self, '%s Recording start error' % self.device_name, level=logging.WARNING)
+            self.logger.info(self, '%s Recording start error' % self.device_name)
             return False
         self.record_initiated = True
         self.data_ready_value = False
@@ -438,7 +457,6 @@ class TectronixTangoServer(TangoServerPrototype):
         self.set_status('Recording has been stopped')
         self.logger.info('%s Recording has been stopped' % self.device_name)
         self.record_initiated = False
-        # self.data_ready_value = False
 
     @command(dtype_in=str, dtype_out=str)
     def send_command(self, cmd):
@@ -455,16 +473,6 @@ class TectronixTangoServer(TangoServerPrototype):
         #     self.set_status('Reconnection Error')
         #     self.logger.warning('Reconnection Error')
 
-    def read(self):
-        plots = self.tec.read_plots()
-        for i in range(4):
-            if i+1 in plots:
-                p = plots[i+1]
-                self.cx[i] = p['x']
-                self.cy[i] = p['y']
-            else:
-                self.cx[i] = empty_array
-                self.cy[i] = empty_array
 
 def looping():
     # global t0
@@ -476,7 +484,8 @@ def looping():
         #     dev.reconnect()
         if dev.record_initiated:
             try:
-                if dev.read_data_ready():
+                if dev.tec.is_aq_finished():
+                    # if dev.read_data_ready():
                     msg = '%s Recording finished, data is ready' % dev.device_name
                     dev.logger.info(msg)
                     dev.record_stop_time = time.time()

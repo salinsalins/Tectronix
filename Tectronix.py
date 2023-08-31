@@ -15,6 +15,8 @@ from PIL import Image
 import sys
 import time
 
+from log_exception import log_exception
+
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 from config_logger import config_logger
@@ -261,6 +263,7 @@ class TectronixTDS:
         except KeyboardInterrupt:
             raise
         except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
+            log_exception(self.logger, 'Send command %s exception', cmd)
             self.disconnect()
         self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
         return result
@@ -325,7 +328,7 @@ class TectronixTDS:
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
         if num_aq is not None and num_aq != self.last_aq:
-            self.logger.debug('New shot detected %s %s', num_aq, self.last_aq)
+            self.logger.info('New shot detected %s -> %s', num_aq, self.last_aq)
             self.last_aq = num_aq
             return True
         return False
