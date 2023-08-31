@@ -506,10 +506,10 @@
            <number>0</number>
           </property>
           <property name="rightMargin">
-           <number>0</number>
+           <number>20</number>
           </property>
           <property name="bottomMargin">
-           <number>20</number>
+           <number>0</number>
           </property>
          </layout>
         </widget>
