@@ -191,7 +191,7 @@ class TectronixTangoServer(TangoServerPrototype):
         self.tec = None
         self.x = [empty_array] * 4
         self.y = [empty_array] * 4
-        self.hor_sc = 1.0
+        self.hor_sc = float('nan')
         self.trig_val = 0.0
         self.scles = [0.0] * 4
         self.offsets = [0.0] * 4
@@ -232,11 +232,9 @@ class TectronixTangoServer(TangoServerPrototype):
             self.device_type_value = self.tec.tec_type
             #
             if self.connected:
-                if self.read_horizontal_scale() is None:
-                    return False
+                self.read_horizontal_scale()
                 self.horizontal_scale.set_write_value(self.hor_sc)
-                if self.read_trigger_position() is None:
-                    return False
+                self.read_trigger_position()
                 self.trigger_position.set_write_value(self.trig_val)
                 self.init_result = None
                 msg = '%s %s has been initialized' % (self.device_name, self.device_type_value)
@@ -282,6 +280,8 @@ class TectronixTangoServer(TangoServerPrototype):
         return False
 
     def read_horizontal_scale(self):
+        # if not numpy.isnan(self.hor_sc):
+        #     return self.hor_sc
         try:
             v = self.tec.send_command('HORizontal:MAIn:SCAle?')
             self.hor_sc = float(v)
@@ -294,11 +294,18 @@ class TectronixTangoServer(TangoServerPrototype):
 
     def write_horizontal_scale(self, v):
         try:
-            self.tec.send_command('HORizontal:MAIn:SCAle ' + str(v))
-            self.hor_sc = float(v)
+            if self.tec.send_command('HORizontal:MAIn:SCAle ' + str(v)) is None:
+                self.hor_sc = float('nan')
+                return
+            v1 = self.tec.send_command('HORizontal:MAIn:SCAle?')
+            if v1 is None:
+                self.hor_sc = float('nan')
+                return
+            self.hor_sc = float(v1)
         except KeyboardInterrupt:
             raise
         except:
+            self.hor_sc = float('nan')
             self.log_exception()
 
     def read_trigger_position(self):
