@@ -252,8 +252,9 @@ class TectronixTDS:
             if result is not None:
                 result = result.strip()
                 if result.startswith(':'):
-                    tec_send_command(self.connection, 'HEADer 0')
-                    result = tec_send_command(self.connection, cmd)
+                    with self.lock:
+                        tec_send_command(self.connection, 'HEADer 0')
+                        result = tec_send_command(self.connection, cmd)
                     result = result.strip()
                 if cmd.endswith('?'):
                     self.config[cmd] = result
