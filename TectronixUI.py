@@ -47,7 +47,7 @@ from isfread import isfread
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '1.0'
+APPLICATION_VERSION = '1.1'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
@@ -382,6 +382,18 @@ class MainWindow(QMainWindow):
                 p['y'] /= p['scale']
                 p['y'] += p['pos']
             self.plot_data(plots)
+            colors = ['y', 'c', 'm', 'g']
+            try:
+                sou = self.device.send_command('TRIG:A:EDG:SOU?')
+                i = int(sou[2])
+                clr = colors[i-1]
+            except KeyboardInterrupt:
+                raise
+            except:
+                clr = 'w'
+            if 'x' in p:
+                x = p['x'][int(len(p['x'])/2)]
+                axes.plot([x,x], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 3})
 
     def save_isf(self, plots):
         for i in plots:
