@@ -370,6 +370,7 @@ class MainWindow(QMainWindow):
                 if self.rearm:
                     self.device.start_aq()
                 self.save_isf(plots)
+            p = {}
             for i in plots:
                 p = plots[i]
                 s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
@@ -377,6 +378,7 @@ class MainWindow(QMainWindow):
                 p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
             axes = self.mplw.canvas.ax
             axes.set_yrange(-5.0, 5.0)
+            p = {}
             for i in plots:
                 p = plots[i]
                 p['y'] /= p['scale']
