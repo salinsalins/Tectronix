@@ -26,7 +26,7 @@ empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 
 class TectronixTangoServer(TangoServerPrototype):
-    server_version_value = '1.0'
+    server_version_value = '1.1'
     server_name_value = 'Tectronix oscilloscope (TDS3014) Tango device server'
     device_list = []
 
@@ -236,6 +236,9 @@ class TectronixTangoServer(TangoServerPrototype):
                 self.horizontal_scale.set_write_value(self.hor_sc)
                 self.read_trigger_position()
                 self.trigger_position.set_write_value(self.trig_val)
+                self.ch1_state.set_write_value(self.read_ch1_state())
+                self.ch1_scale.set_write_value(self.read_ch1_scale())
+                self.ch1_offset.set_write_value(self.read_ch1_offset())
                 self.init_result = None
                 msg = '%s %s has been initialized' % (self.device_name, self.device_type_value)
                 self.logger.debug(msg)
