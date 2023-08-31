@@ -183,8 +183,8 @@ class TectronixTangoServer(TangoServerPrototype):
 
     def init_device(self):
         self.tec = None
-        self.cx = [empty_array] * 4
-        self.cy = [empty_array] * 4
+        self.x = [empty_array] * 4
+        self.y = [empty_array] * 4
         self.hor_sc = 1.0
         self.trig_val = 0.0
         self.scles = [0.0] * 4
@@ -383,28 +383,28 @@ class TectronixTangoServer(TangoServerPrototype):
         self.tec.set_channel_offset(1, v)
 
     def read_chany01(self):
-        return self.y1
+        return self.y[0]
 
     def read_chany02(self):
-        return self.y2
+        return self.y[1]
 
     def read_chany03(self):
-        return self.y3
+        return self.y[2]
 
     def read_chany04(self):
-        return self.y4
+        return self.y[3]
 
     def read_chanx01(self):
-        return self.x1
+        return self.x[0]
 
     def read_chanx02(self):
-        return self.x2
+        return self.x[1]
 
     def read_chanx03(self):
-        return self.x3
+        return self.x[2]
 
     def read_chanx04(self):
-        return self.x4
+        return self.x[3]
 
     @command(dtype_in=None, dtype_out=bool)
     def start_recording(self):

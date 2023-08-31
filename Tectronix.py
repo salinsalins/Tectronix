@@ -339,14 +339,15 @@ class TectronixTDS:
         if self.send_command('ACQuire:STATE 0') is None:
             return
         self.send_command('ACQuire:STATE 1')
-        self.last_aq = self.send_command('ACQuire:NUMACq?')
+        v = self.send_command('ACQuire:NUMACq?')
+        if v is None:
+            return
+        self.last_aq = v
         return self.is_armed()
 
     def stop_aq(self):
-        self.send_command('ACQuire:STATE 0')
-        # st = self.send_command('TRIGger:STATE?')
-        # if st.upper().startswith('ARMED'):
-        #     return False
+        if self.send_command('ACQuire:STATE 0') is None:
+            return None
         return True
 
     def is_aq_in_progeress(self):
