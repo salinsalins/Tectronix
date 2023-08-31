@@ -15,10 +15,9 @@ from PIL import Image
 import sys
 import time
 
-from log_exception import log_exception
-
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
+from log_exception import log_exception
 from config_logger import config_logger
 from isfread import isfread
 
