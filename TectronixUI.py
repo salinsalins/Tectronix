@@ -69,7 +69,8 @@ class MainWindow(QMainWindow):
         restore_settings(self, file_name=CONFIG_FILE,
                          widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.folder = self.config.get('folder', 'D:/tec_data')
-        self.comboBox_2.insertItem(0, self.folder)
+        if self.comboBox_2.findText(self.folder) < 0:
+            self.comboBox_2.insertItem(0, self.folder)
         self.out_dir = ''
         self.make_data_folder()
         # Create new plot widget
@@ -443,7 +444,6 @@ class MainWindow(QMainWindow):
         # self.folder = self.comboBox_2.itemText(m)
         self.folder = folder
         self.make_data_folder()
-        self.read_folder(self.out_dir)
 
     def processing_changed(self, m):
         self.erase()
