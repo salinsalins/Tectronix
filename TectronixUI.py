@@ -262,8 +262,12 @@ class MainWindow(QMainWindow):
         else:
             self.device.send_command('SELect:CH4 0')
 
+    def turn_color(self, widget, color='white'):
+        widget.setStyleSheet('QCheckBox::indicator:unchecked {background-color: %s;}' % color)
+
     def turn_red(self):
-        self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
+        self.turn_color(self.checkBox_5, 'red')
+        # self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
 
     def turn_green(self):
         self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
@@ -368,9 +372,10 @@ class MainWindow(QMainWindow):
             self.turn_red()
         if self.device.is_aq_finished():
             if self.device.connected:
+                dts = self.dts()
                 plots = self.device.read_plots()
-                self.save_isf(plots)
-                self.save_png()
+                self.save_isf(plots, dts)
+                self.save_png(dts)
                 if self.rearm:
                     self.device.start_aq()
             p = {}
@@ -400,22 +405,30 @@ class MainWindow(QMainWindow):
                 x = p['x'][int(len(p['x'])/2)]
                 axes.plot([x,x], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 3})
 
-    def save_png(self):
+    def dts(self):
+        return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+
+    def save_png(self, dts=None):
         png, data = self.device.get_image()
-        file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '.png'
+        if dts is None:
+            dts = self.dts()
+        file_name = dts + '.png'
         fn = os.path.join(self.out_dir, file_name)
         with open(fn, 'wb') as fid:
             fid.write(data)
-        self.logger.debug("png file saved to %s", fn)
+        self.logger.info("png file saved to %s", fn)
 
-    def save_isf(self, plots):
+    def save_isf(self, plots, dts=None, chnl=None):
+        if dts is None:
+            dts = self.dts()
         for i in plots:
-            file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '-CH%s.isf' % i
-            fn = os.path.join(self.out_dir, file_name)
-            isf = plots[i]['isf']
-            with open(fn, 'wb') as fid:
-                fid.write(isf)
-            self.logger.debug("isf file saved to %s", fn)
+            if chnl is None or chnl == i:
+                file_name = dts + '-CH%s.isf' % i
+                fn = os.path.join(self.out_dir, file_name)
+                isf = plots[i]['isf']
+                with open(fn, 'wb') as fid:
+                    fid.write(isf)
+                self.logger.info("isf file saved to %s", fn)
 
     def select_folder(self):
         """Opens a file select dialog"""
