@@ -81,7 +81,7 @@ def tec_get_image(connection):
             break
         data += d
     img = Image.open(io.BytesIO(data))
-    return img
+    return img, data
 
 
 def tec_get_isf(connection, chan_number):

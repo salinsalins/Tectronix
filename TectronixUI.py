@@ -7,6 +7,7 @@ Created on Aug 23, 2023
 s='s=%r;print(s%%s)';print(s%s)
 """
 import datetime
+import io
 
 import os.path
 import sys
@@ -368,9 +369,10 @@ class MainWindow(QMainWindow):
         if self.device.is_aq_finished():
             if self.device.connected:
                 plots = self.device.read_plots()
+                self.save_isf(plots)
+                self.save_png()
                 if self.rearm:
                     self.device.start_aq()
-                self.save_isf(plots)
             p = {}
             for i in plots:
                 p = plots[i]
@@ -397,6 +399,14 @@ class MainWindow(QMainWindow):
             if 'x' in p:
                 x = p['x'][int(len(p['x'])/2)]
                 axes.plot([x,x], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 3})
+
+    def save_png(self):
+        png, data = self.device.get_image()
+        file_name = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '.png'
+        fn = os.path.join(self.out_dir, file_name)
+        with open(fn, 'wb') as fid:
+            fid.write(data)
+        self.logger.debug("png file saved to %s", fn)
 
     def save_isf(self, plots):
         for i in plots:
