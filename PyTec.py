@@ -94,6 +94,19 @@ class MainWindow(QMainWindow):
         #x = numpy.arange(100.0)
         #y = numpy.sin(x)
         #axes.plot(x, y)
+        # self.mplw.getViewBox().setBackgroundColor('#1d648da0')
+        # font = QFont('Open Sans', 14, weight=QFont.Bold)
+        font = QFont('Open Sans', 16)
+        # axes.setFont(font)
+        # self.mplw.getPlotItem().getAxis("bottom").setTickFont(font)
+        # self.mplw.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
+        # self.mplw.getPlotItem().getAxis("bottom").label.setFont(font)
+        # self.mplw.getPlotItem().getAxis("left").setTickFont(font)
+        # self.mplw.getPlotItem().getAxis("left").label.setFont(font)
+        # self.mplw.getPlotItem().showGrid(True, True)
+        # self.mplw.getPlotItem().setLabel('bottom', 'Time', units='s')
+        # self.mplw.getPlotItem().setLabel('left', 'Signal', units='div')
+        # self.plot = self.mplw.plot
 
         # Class members definition
         self.folder = None
