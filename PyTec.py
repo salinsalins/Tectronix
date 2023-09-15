@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
 
         # Create new plot widget
         self.mplw = MplWidget()
+        self.mplw.ntb.show()
         # self.mplw.ntb.setIconSize(QSize(18, 18))
         # self.mplw.ntb.setFixedSize(300, 24)
         layout = self.frame_3.layout()

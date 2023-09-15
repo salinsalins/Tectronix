@@ -409,7 +409,7 @@ class MainWindow(QMainWindow):
         return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
 
     def save_png(self, dts=None):
-        png, data = self.device.get_image()
+        data = self.device.get_image()
         if dts is None:
             dts = self.dts()
         file_name = dts + '.png'

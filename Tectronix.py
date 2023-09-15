@@ -27,6 +27,24 @@ def tec_connect(ip, timeout=None):
     return connection
 
 
+def tec_request(connection, method, url, params, headers):
+    connection.request(method, url, params, headers)
+    response = connection.getresponse()
+    if response.status != 200:
+        return None
+    return tec_read_response_data(response)
+
+
+def tec_read_response_data(response):
+    data = b''
+    while True:
+        d = response.read(1024)
+        if not d:
+            break
+        data += d
+    return data
+
+
 def tec_send_command(connection, cmd, raw_response=False):
     params = ('COMMAND=' + cmd + '\n\rgpibsend=Send\n\rname=\n\r').encode()
     headers = {"Content-type": "text/plain",
@@ -37,7 +55,7 @@ def tec_send_command(connection, cmd, raw_response=False):
         if raw_response:
             return None, response.status, None
         return None
-    data = tec_read_response_data(response)
+    data = tec_read_response_data(response).decode()
     n = data.find('<TEXTAREA')
     if n < 0:
         if raw_response:
@@ -58,18 +76,7 @@ def tec_send_command(connection, cmd, raw_response=False):
     return data[n + n1 + 1:m]
 
 
-def tec_read_response_data(response):
-    data = b''
-    while True:
-        d = response.read(1024)
-        if not d:
-            break
-        data += d
-    data = data.decode()
-    return data
-
-
-def tec_get_image(connection):
+def tec_get_image_data(connection):
     params = b''
     headers = {"Accept": "image/avif,image/webp,*/*"}
     connection.request("GET", "/Image.png", params, headers)
@@ -80,13 +87,18 @@ def tec_get_image(connection):
         if not d:
             break
         data += d
+    return data
+
+
+def tec_get_image(connection):
+    data = tec_get_image_data(connection)
     img = Image.open(io.BytesIO(data))
-    return img, data
+    return img
 
 
 def tec_get_isf(connection, chan_number):
-    str = 'command=select:ch%s on\r\ncommand=save:waveform:fileformat internal\r\nwfmsend=Get\r\n' % chan_number
-    params = str.encode()
+    s = 'command=select:ch%s on\r\ncommand=save:waveform:fileformat internal\r\nwfmsend=Get\r\n' % chan_number
+    params = s.encode()
     headers = {"Accept": "text/html, application/xhtml+xml, image/jxr, */*",
                "Content-Type": "text/plain",
                "Cache-Control": "no-cache"}
@@ -308,22 +320,14 @@ class TectronixTDS:
         with self.lock:
             if not self.connected:
                 return
-            return tec_get_image(self.connection)
+            try:
+                return tec_get_image_data(self.connection)
+            except KeyboardInterrupt:
+                raise
+            except:
+                if not self.connected:
+                    return
 
-    # def combine_commands(self, commands):
-    #     combined = ''
-    #     for key in commands:
-    #         if key.endswith('?') or commands[key] == '':
-    #             if not key.endswith("?"):
-    #                 key += "?"
-    #         else:
-    #             key = key + ' ' + commands[key]
-    #         if key.startswith('*'):
-    #             combined += ';' + key
-    #         else:
-    #             combined += ';:' + key
-    #     return combined[1:]
-    #
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
         if num_aq is not None and num_aq != self.last_aq:
