@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1415,
+            1481,
             965
         ],
         "position": [
-            307,
-            420
+            2034,
+            238
         ]
     },
     "log_level": 10,
@@ -24,7 +24,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "",
+    "lineEdit_2": "*idn?",
     "checkBox": false,
     "ip": "192.168.1.222"
 }

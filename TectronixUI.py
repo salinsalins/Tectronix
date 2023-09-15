@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
             self.lineEdit_14.setText(v)
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
+            self.config['ip'] = ip
         else:
             self.logger.info("Oscilloscope is not connected")
             # exit(-112)
