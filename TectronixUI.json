@@ -1,0 +1,30 @@
+{
+    "main_window": {
+        "size": [
+            1481,
+            965
+        ],
+        "position": [
+            2034,
+            238
+        ]
+    },
+    "log_level": 10,
+    "comboBox": {
+        "items": [
+            "Signal",
+            "FFT",
+            "Cumulative"
+        ],
+        "index": 0
+    },
+    "comboBox_2": {
+        "items": [
+            "D:/tec_data"
+        ],
+        "index": 0
+    },
+    "lineEdit_2": "*idn?",
+    "checkBox": false,
+    "ip": "192.168.1.222"
+}

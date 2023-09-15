@@ -101,8 +101,8 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.clock)
         #
         self.rearm = False
-        config = self.config.get('config', None)
-        ip = self.config.get('ip', None)
+        config = self.config.get('config', {})
+        ip = self.config.get('ip', '192.168.1.222')
         if config is None or ip is None:
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
             self.lineEdit_14.setText(v)
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
+            self.config['ip'] = ip
         else:
             self.logger.info("Oscilloscope is not connected")
             # exit(-112)
