@@ -358,7 +358,7 @@ class TectronixTDS:
             return None
         return True
 
-    def is_aq_in_progeress(self):
+    def is_aq_in_progress(self):
         st = self.send_command('BUSY?')
         if st is not None and st.upper().startswith('1'):
             return True
