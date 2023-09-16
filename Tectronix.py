@@ -72,8 +72,8 @@ def tec_send_command(connection, cmd, raw_response=False):
             return None, response.status, data
         return None
     if raw_response:
-        return data[n + n1 + 1:m], response.status, data
-    return data[n + n1 + 1:m]
+        return data[n + n1 + 1:m].strip(), response.status, data
+    return data[n + n1 + 1:m].strip()
 
 
 def tec_get_image_data(connection):
@@ -81,13 +81,7 @@ def tec_get_image_data(connection):
     headers = {"Accept": "image/avif,image/webp,*/*"}
     connection.request("GET", "/Image.png", params, headers)
     response = connection.getresponse()
-    data = b''
-    while True:
-        d = response.read(1024)
-        if not d:
-            break
-        data += d
-    return data
+    return tec_read_response_data(response)
 
 
 def tec_get_image(connection):
@@ -104,13 +98,7 @@ def tec_get_isf(connection, chan_number):
                "Cache-Control": "no-cache"}
     connection.request("POST", "/getwfm.isf", params, headers)
     response = connection.getresponse()
-    data = b''
-    while True:
-        d = response.read(1024)
-        if not d:
-            break
-        data += d
-    return data
+    return tec_read_response_data(response)
 
 
 def tec_get_trace(connection, chan_number):
@@ -120,6 +108,7 @@ def tec_get_trace(connection, chan_number):
 
 
 class TectronixTDS:
+    RECONNECT_TIMEOUT = 5.0
     default = {
         'VERBose': '0',  # 1 | 0 | ON | OFF
         'HEADer': '0',  # 1 | 0 | ON | OFF
@@ -188,7 +177,7 @@ class TectronixTDS:
         # '*idn?': ''
     }
 
-    def __init__(self, ip=None, timeout=2.0, config=None, logger=None):
+    def __init__(self, ip=None, timeout=1.0, config=None, logger=None):
         t0 = time.time()
         if logger is None:
             self.logger = config_logger()
@@ -204,7 +193,7 @@ class TectronixTDS:
         self.timeout = timeout
         self.response = ''
         self.connected = False
-        self.reconnect_time = time.time() + 5.0
+        self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
         self.connection = None
         # self.connection = tec_connect(self.ip, 2.0)
         # self.connected = True
@@ -223,6 +212,76 @@ class TectronixTDS:
     def __del__(self):
         if self.connection is not None:
             self.connection.close()
+
+    def connect(self, timeout=None):
+        if timeout is None:
+            timeout = self.timeout
+        self.timeout = timeout
+        try:
+            with self.lock:
+                self.connection = tec_connect(self.ip, timeout=timeout)
+            self.connected = True
+            self.logger.debug('Connected')
+        except KeyboardInterrupt:
+            raise
+        except:
+            self.connected = False
+            self.logger.debug('Connection failed')
+        self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
+
+    def send_command(self, cmd):
+        result = self._send_command(cmd)
+        if result is not None:
+            return result
+        self.logger.debug('Repeat %s', cmd)
+        return self._send_command(cmd)
+
+    def _send_command(self, cmd):
+        result = None
+        self.response = ('None', None, None)
+        if not self.reconnect():
+            return None
+        t0 = time.time()
+        try:
+            with self.lock:
+                result, status, data = tec_send_command(self.connection, cmd, True)
+            self.response = (result, status, data)
+            if result is not None:
+                if result.startswith(':'):
+                    with self.lock:
+                        tec_send_command(self.connection, 'HEADer 0')
+                        result, status, data = tec_send_command(self.connection, cmd, True)
+                    self.response = (result, status, data)
+                if cmd.endswith('?'):
+                    self.config[cmd] = result
+        except KeyboardInterrupt:
+            raise
+        except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
+            log_exception(self.logger, 'Send command %s exception', cmd)
+            self.disconnect()
+        self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
+        return result
+
+    def reconnect(self):
+        if self.connected:
+            return True
+        if self.reconnect_time < time.time():
+            self.logger.debug('Reconnecting')
+            self.connect()
+            self.send_command('HEADer 0')
+            return self.connected
+        else:
+            return False
+
+    def disconnect(self):
+        if not self.connected:
+            return
+        if self.connection is not None:
+            with self.lock:
+                self.connection.close()
+        self.connected = False
+        self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
+        self.logger.debug('Disconnected')
 
     def set_config(self, config=None):
         t0 = time.time()
@@ -252,68 +311,10 @@ class TectronixTDS:
             self.config['ACQuire:NUMACq'] = self.send_command('ACQuire:NUMACq?')
         self.last_aq = self.config['ACQuire:NUMACq']
 
-    def send_command(self, cmd):
-        result = None
-        self.response = ('None', None, None)
+    def get_data(self, ch_n):
         if not self.reconnect():
             return None
-        t0 = time.time()
-        try:
-            with self.lock:
-                result, status, data = tec_send_command(self.connection, cmd, True)
-            self.response = (result, status, data)
-            if result is not None:
-                result = result.strip()
-                if result.startswith(':'):
-                    with self.lock:
-                        tec_send_command(self.connection, 'HEADer 0')
-                        result = tec_send_command(self.connection, cmd)
-                    result = result.strip()
-                if cmd.endswith('?'):
-                    self.config[cmd] = result
-        except KeyboardInterrupt:
-            raise
-        except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
-            log_exception(self.logger, 'Send command %s exception', cmd)
-            self.disconnect()
-        self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
-        return result
-
-    def connect(self, timeout=2.0):
         with self.lock:
-            self.connection = tec_connect(self.ip, timeout=timeout)
-        self.connected = True
-        self.config['*idn?'] = self.send_command('*idn?')
-        if not self.connected:
-            self.logger.debug('Connection failed')
-        else:
-            self.logger.debug('Connected')
-
-    def disconnect(self):
-        if not self.connected:
-            return
-        if self.connection is not None:
-            with self.lock:
-                self.connection.close()
-        self.connected = False
-        self.reconnect_time = time.time() + 5.0
-        self.logger.debug('Disconnected')
-
-    def reconnect(self):
-        if self.connected:
-            return True
-        if self.reconnect_time < time.time():
-            self.disconnect()
-            self.logger.debug('Reconnecting')
-            self.__init__(ip=self.ip, timeout=self.timeout, config=self.config, logger=self.logger)
-            return self.connected
-        else:
-            return False
-
-    def get_data(self, ch_n):
-        with self.lock:
-            if not self.connected:
-                return
             return tec_get_trace(self.connection, ch_n)
 
     def get_image(self):
