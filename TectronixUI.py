@@ -372,8 +372,8 @@ class MainWindow(QMainWindow):
         else:
             self.turn_red()
         if self.device.is_aq_finished():
+            dts = self.dts()
             if self.device.connected:
-                dts = self.dts()
                 plots = self.device.read_plots()
                 self.save_isf(plots, dts)
                 self.save_png(dts)
@@ -411,6 +411,9 @@ class MainWindow(QMainWindow):
 
     def save_png(self, dts=None):
         data = self.device.get_image()
+        if data is None:
+            self.logger.info("Can not read image")
+            return
         if dts is None:
             dts = self.dts()
         file_name = dts + '.png'

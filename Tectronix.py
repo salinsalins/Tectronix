@@ -314,20 +314,24 @@ class TectronixTDS:
     def get_data(self, ch_n):
         if not self.reconnect():
             return None
-        with self.lock:
-            return tec_get_trace(self.connection, ch_n)
+        try:
+            with self.lock:
+                return tec_get_trace(self.connection, ch_n)
+        except KeyboardInterrupt:
+            raise
+        except:
+            return None
 
     def get_image(self):
-        with self.lock:
-            if not self.connected:
-                return
-            try:
+        if not self.reconnect():
+            return None
+        try:
+            with self.lock:
                 return tec_get_image_data(self.connection)
-            except KeyboardInterrupt:
-                raise
-            except:
-                if not self.connected:
-                    return
+        except KeyboardInterrupt:
+            raise
+        except:
+            return None
 
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
@@ -367,14 +371,19 @@ class TectronixTDS:
     def read_plots(self):
         self.plots = {}
         if not self.connected:
-            return self.plots
-        sel = self.send_command('SEL?').split(';')
-        if not self.connected:
-            return self.plots
+            return {}
+        sel = self.send_command('SEL?')
+        if sel is None or not self.connected:
+            return {}
+        sel = sel.split(';')
         for i in range(4):
             if sel[i] == '1':
-                # if self.send_command('SELect:CH%s?'%ch) == '1':
-                x, y, h, isf = self.get_data(i + 1)
+                result = self.get_data(i + 1)
+                if result is None:
+                    result = self.get_data(i + 1)
+                if result is None:
+                    continue
+                x, y, h, isf = result
                 self.plots[i + 1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
         return self.plots
 
