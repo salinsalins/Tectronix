@@ -299,6 +299,7 @@ class MainWindow(QMainWindow):
         colors = ['y', 'c', 'm', 'g']
         if self.checkBox.isChecked():
             self.erase()
+        self.mplw.clearScaleHistory()
         axes = self.mplw.canvas.ax
         # axes.grid(color='k', linestyle='--')
         axes.set_title('Data from ' + self.folder)
@@ -402,9 +403,7 @@ class MainWindow(QMainWindow):
                 raise
             except:
                 clr = 'w'
-            if 'x' in p:
-                x = p['x'][int(len(p['x'])/2)]
-                axes.plot([x,x], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 3})
+            axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 2})
 
     def dts(self):
         return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
