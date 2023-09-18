@@ -61,16 +61,16 @@ class MplWidget(QtGui.QWidget):
         # set the canvas to the Matplotlib widget
         self.canvas = MplCanvas()
         # create a vertical box layout
-        self.vbl = QtGui.QVBoxLayout()
-        self.vbl.setSpacing(0)
-
+        layout = QtGui.QVBoxLayout()
+        layout.setSpacing(0)
+        # toolbar
         self.ntb = NavigationToolbar(self.canvas, parent)
         self.ntb.hide()
-        self.vbl.addWidget(self.ntb)
-
-        # add mpl widget to vertical box
-        self.vbl.addWidget(self.canvas)
-        # set the layout to the vertical box
-        self.setLayout(self.vbl)
+        # add widgets to layout
+        layout.addWidget(self.ntb)
+        layout.addWidget(self.canvas)
+        # set the layout to widget
+        self.setLayout(layout)
+        #
         self.setMinimumHeight(height)
         self.setMinimumWidth(width)
