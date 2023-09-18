@@ -138,6 +138,10 @@ class MainWindow(QMainWindow):
 
     def read_folder(self, folder):
         sel = self.listWidget.selectedItems()
+        if len(sel) > 0:
+            row = self.listWidget.row(sel[0])
+        else:
+            row = 0
         # All files in the folder
         files = os.listdir(folder)
         # Filter *.isf files
@@ -148,10 +152,8 @@ class MainWindow(QMainWindow):
         self.listWidget.addItems(self.files)
         self.listWidget.blockSignals(False)
         self.listWidget.setUpdatesEnabled(True)
-        if len(sel) > 0:
-            sel[0].setSelected(True)
-        else:
-            self.listWidget.item(0).setSelected(True)
+        # self.listWidget.item(row).setSelected(True)
+        self.listWidget.setCurrentRow(row)
 
     def erase(self):
         self.mplw.canvas.ax.clear()
