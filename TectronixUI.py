@@ -159,6 +159,7 @@ class MainWindow(QMainWindow):
 
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
         self.pushButton_6.clicked.connect(self.single_seq_pressed)
+        self.pushButton_7.clicked.connect(self.prev_pressed)
 
         self.pushButton_4.toggled.connect(self.run_toggled)
         #
@@ -296,8 +297,13 @@ class MainWindow(QMainWindow):
         else:
             self.turn_ref()
 
+    def prev_pressed(self):
+        colors = [(0, 127, 127), (127, 127, 0), (127, 0, 127), (0, 0, 127)]
+        data = self.prev_plots
+        for i in data:
+            self.plot_trace(data[i], color=colors[i - 1])
+
     def plot_data(self, data):
-        # self.logger.debug('Entry')
         colors = ['y', 'c', 'm', 'g']
         if self.checkBox.isChecked():
             self.erase()
