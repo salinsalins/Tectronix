@@ -41,8 +41,8 @@ if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
-from mplwidget import MplWidget
-# from pyqtgraphwidget import MplWidget
+# from mplwidget import MplWidget
+from pyqtgraphwidget import MplWidget
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
@@ -78,17 +78,17 @@ class MainWindow(QMainWindow):
         self.mplw.ntb.show()
         layout = self.frame_3.layout()
         layout.addWidget(self.mplw)
-        # self.mplw.getViewBox().setBackgroundColor('#1d648da0')
-        # font = QFont('Open Sans', 16)
-        # self.mplw.getPlotItem().getAxis("bottom").setTickFont(font)
-        # self.mplw.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
-        # self.mplw.getPlotItem().getAxis("bottom").label.setFont(font)
-        # self.mplw.getPlotItem().getAxis("left").setTickFont(font)
-        # self.mplw.getPlotItem().getAxis("left").label.setFont(font)
-        # self.mplw.getPlotItem().showGrid(True, True)
-        # self.mplw.getPlotItem().setLabel('bottom', 'Time', units='s')
-        # self.mplw.getPlotItem().setLabel('left', 'Signal', units='div')
-        # self.plot = self.mplw.plot
+        self.mplw.getViewBox().setBackgroundColor('#1d648da0')
+        font = QFont('Open Sans', 16)
+        self.mplw.getPlotItem().getAxis("bottom").setTickFont(font)
+        self.mplw.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
+        self.mplw.getPlotItem().getAxis("bottom").label.setFont(font)
+        self.mplw.getPlotItem().getAxis("left").setTickFont(font)
+        self.mplw.getPlotItem().getAxis("left").label.setFont(font)
+        self.mplw.getPlotItem().showGrid(True, True)
+        self.mplw.getPlotItem().setLabel('bottom', 'Time', units='s')
+        self.mplw.getPlotItem().setLabel('left', 'Signal', units='div')
+        self.plot = self.mplw.plot
 
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
