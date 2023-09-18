@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
         #self.read_folder('./')
 
     def read_folder(self, folder):
-        self.erase()
+        sel = self.listWidget.selectedItems()
         # All files in the folder
         files = os.listdir(folder)
         # Filter *.isf files
@@ -148,7 +148,10 @@ class MainWindow(QMainWindow):
         self.listWidget.addItems(self.files)
         self.listWidget.blockSignals(False)
         self.listWidget.setUpdatesEnabled(True)
-        self.listWidget.item(0).setSelected(True)
+        if len(sel) > 0:
+            sel[0].setSelected(True)
+        else:
+            self.listWidget.item(0).setSelected(True)
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -258,6 +261,12 @@ class MainWindow(QMainWindow):
     def timer_handler(self):
         t = time.strftime('%H:%M:%S')
         self.clock.setText(t)
+        files = os.listdir(self.folder)
+        # Filter *.isf files
+        isf_files = [f for f in files if f.endswith('.isf')]
+        if len(isf_files) > len(self.files):
+            self.read_folder(self.folder)
+
 
     def select_folder(self):
         """Opens a file select dialog"""
@@ -290,8 +299,8 @@ class MainWindow(QMainWindow):
 
     def folder_changed(self, m):
         folder = self.comboBox_2.currentText()
-        #self.folder = self.comboBox_2.itemText(m)
         self.folder = folder
+        self.erase()
         self.read_folder(folder)
 
     def processing_changed(self, m):
