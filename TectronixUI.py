@@ -72,6 +72,8 @@ class MainWindow(QMainWindow):
         if self.comboBox_2.findText(self.folder) < 0:
             self.comboBox_2.insertItem(0, self.folder)
         self.out_dir = ''
+        self.plots = {}
+        self.prev_plots = {}
         self.make_data_folder()
         # Create new plot widget
         self.mplw = MplWidget()
@@ -380,6 +382,8 @@ class MainWindow(QMainWindow):
                 self.save_png(dts)
                 if self.rearm:
                     self.device.start_aq()
+                self.prev_plots = self.plots
+                self.plots = plots
             p = {}
             for i in plots:
                 p = plots[i]
