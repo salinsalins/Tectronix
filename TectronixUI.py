@@ -411,6 +411,8 @@ class MainWindow(QMainWindow):
     def save_png(self, dts=None):
         data = self.device.get_image()
         if data is None:
+            data = self.device.get_image()
+        if data is None:
             self.logger.info("Can not read image")
             return
         if dts is None:

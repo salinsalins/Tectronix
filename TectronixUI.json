@@ -5,8 +5,8 @@
             965
         ],
         "position": [
-            2186,
-            388
+            2195,
+            421
         ]
     },
     "log_level": 10,
@@ -25,6 +25,6 @@
         "index": 0
     },
     "lineEdit_2": "*idn?",
-    "checkBox": false,
+    "checkBox": true,
     "ip": "192.168.1.222"
 }
