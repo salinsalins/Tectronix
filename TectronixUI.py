@@ -154,17 +154,16 @@ class MainWindow(QMainWindow):
         self.lineEdit_12.editingFinished.connect(self.ch2_scale_changed)
         self.lineEdit_13.editingFinished.connect(self.ch3_scale_changed)
         self.lineEdit_14.editingFinished.connect(self.ch4_scale_changed)
-
         self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
-
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
         self.pushButton_6.clicked.connect(self.single_seq_pressed)
         self.pushButton_7.clicked.connect(self.prev_pressed)
-
         self.pushButton_4.toggled.connect(self.run_toggled)
+        self.pushButton_9.clicked.connect(self.send2_pressed)
+        #
+        self.frame_6.hide()
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
-
         # x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
         # y = numpy.sin(x)
         # self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
@@ -197,6 +196,14 @@ class MainWindow(QMainWindow):
         dt = time.time() - t0
         self.label_11.setText("%5.3f" % dt)
         self.lineEdit_3.setText(str(self.device.response[0]))
+        # self.label_6.setText(self.device.response[0])
+
+    def send2_pressed(self):
+        txt = self.comboBox_3.currentText()
+        t0 = time.time()
+        self.device.send_command(txt)
+        dt = time.time() - t0
+        self.textEdit.setText(str(self.device.response[0]))
         # self.label_6.setText(self.device.response[0])
 
     def force_trigger_pressed(self):
@@ -366,6 +373,7 @@ class MainWindow(QMainWindow):
                                 '\nTextronix oscilloscope control utility.', QMessageBox.Ok)
 
     def on_quit(self):
+        self.frame_6.hide()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
                       widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))

@@ -191,6 +191,7 @@ class TectronixTDS:
         if ip is not None:
             self.ip = ip
         self.timeout = timeout
+        self.retries = 2
         self.response = ''
         self.connected = False
         self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
@@ -230,11 +231,22 @@ class TectronixTDS:
         self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
 
     def send_command(self, cmd):
-        result = self._send_command(cmd)
-        if result is not None:
-            return result
-        self.logger.debug('Repeat %s', cmd)
-        return self._send_command(cmd)
+        result = None
+        n = 0
+        while n < self.retries:
+            result = self._send_command(cmd)
+            if result is not None:
+                if result.startswith(':'):
+                    with self.lock:
+                        tec_send_command(self.connection, 'HEADer 0')
+                        result, status, data = tec_send_command(self.connection, cmd, True)
+                    self.response = (result, status, data)
+                if cmd.endswith('?'):
+                    self.config[cmd] = result
+                if result is not None:
+                    break
+            self.logger.debug('Repeat %s', cmd)
+        return result
 
     def _send_command(self, cmd):
         result = None
@@ -246,14 +258,6 @@ class TectronixTDS:
             with self.lock:
                 result, status, data = tec_send_command(self.connection, cmd, True)
             self.response = (result, status, data)
-            if result is not None:
-                if result.startswith(':'):
-                    with self.lock:
-                        tec_send_command(self.connection, 'HEADer 0')
-                        result, status, data = tec_send_command(self.connection, cmd, True)
-                    self.response = (result, status, data)
-                if cmd.endswith('?'):
-                    self.config[cmd] = result
         except KeyboardInterrupt:
             raise
         except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
