@@ -928,12 +928,48 @@
           </property>
           <item>
            <widget class="QComboBox" name="comboBox_3">
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="editable">
              <bool>true</bool>
             </property>
             <item>
              <property name="text">
-              <string>Trig?</string>
+              <string>TRIG?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CH1?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CH2?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CH3?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CH4?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>AQU?</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>*IDN?</string>
              </property>
             </item>
            </widget>
@@ -954,7 +990,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>1000</width>
+              <width>100</width>
               <height>40</height>
              </size>
             </property>

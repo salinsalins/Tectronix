@@ -201,10 +201,11 @@ class MainWindow(QMainWindow):
     def send2_pressed(self):
         txt = self.comboBox_3.currentText()
         t0 = time.time()
-        self.device.send_command(txt)
+        self.device._send_command('HEADer 1')
+        self.device._send_command(txt)
         dt = time.time() - t0
         self.textEdit.setText(str(self.device.response[0]))
-        # self.label_6.setText(self.device.response[0])
+        self.device._send_command('HEADer 0')
 
     def force_trigger_pressed(self):
         self.device.send_command('TRIG FORC')
