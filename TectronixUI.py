@@ -6,6 +6,7 @@ Created on Aug 23, 2023
 
 s='s=%r;print(s%%s)';print(s%s)
 """
+import collections
 import datetime
 import io
 
@@ -74,6 +75,8 @@ class MainWindow(QMainWindow):
         self.out_dir = ''
         self.plots = {}
         self.prev_plots = {}
+        self.history = self.deque = collections.deque(maxlen=100)
+        self.history_index = 0
         self.make_data_folder()
         # Create new plot widget
         self.mplw = MplWidget()
@@ -157,7 +160,8 @@ class MainWindow(QMainWindow):
         self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
         self.pushButton_6.clicked.connect(self.single_seq_pressed)
-        self.pushButton_7.clicked.connect(self.prev_pressed)
+        self.pushButton_10.clicked.connect(self.prev_pressed)
+        self.pushButton_7.clicked.connect(self.next_pressed)
         self.pushButton_4.toggled.connect(self.run_toggled)
         self.pushButton_9.clicked.connect(self.send2_pressed)
         #
@@ -308,9 +312,18 @@ class MainWindow(QMainWindow):
     def prev_pressed(self):
         colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
         data = self.prev_plots
+        data = self.history[self.history_index]
+        self.history_index = max(self.history_index-1, 0)
         for i in data:
             self.plot_trace(data[i], color=colors[i - 1])
 
+    def next_pressed(self):
+        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+        data = self.prev_plots
+        self.history_index = min(self.history_index+1, len(self.history)-1)
+        data = self.history[self.history_index]
+        for i in data:
+            self.plot_trace(data[i], color=colors[i - 1])
     def plot_data(self, data):
         colors = ['y', 'c', 'm', 'g']
         if self.checkBox.isChecked():
@@ -398,6 +411,9 @@ class MainWindow(QMainWindow):
                 if self.rearm:
                     self.device.start_aq()
                 self.prev_plots = self.plots
+                if len(self.prev_plots) > 0:
+                    self.history.append(self.plots)
+                    self.history_index = len(self.history) - 1
                 self.plots = plots
             p = {}
             for i in plots:

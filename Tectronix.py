@@ -234,6 +234,7 @@ class TectronixTDS:
         result = None
         n = 0
         while n < self.retries:
+            n += 1
             result = self._send_command(cmd)
             if result is not None:
                 if result.startswith(':'):
