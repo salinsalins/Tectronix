@@ -298,7 +298,7 @@ class MainWindow(QMainWindow):
             self.turn_ref()
 
     def prev_pressed(self):
-        colors = [(0, 127, 127), (127, 127, 0), (127, 0, 127), (0, 0, 127)]
+        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
         data = self.prev_plots
         for i in data:
             self.plot_trace(data[i], color=colors[i - 1])
@@ -413,7 +413,7 @@ class MainWindow(QMainWindow):
                 raise
             except:
                 clr = 'w'
-            axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 2})
+            axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 1})
 
     def dts(self):
         return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
