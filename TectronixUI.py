@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
         if config is None or ip is None:
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
-        self.device = TectronixTDS(ip=ip, config=config)
+        self.device = TectronixTDS(ip=ip, config=config, timeout=1.0)
         self.device.RECONNECT_TIMEOUT = 0.0
         if self.device.connected:
             sel = self.device.config['SELect?'].split(';')

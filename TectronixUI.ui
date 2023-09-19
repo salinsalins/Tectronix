@@ -970,11 +970,6 @@
             </item>
             <item>
              <property name="text">
-              <string>AQU?</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
               <string>*IDN?</string>
              </property>
             </item>

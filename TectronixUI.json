@@ -2,11 +2,11 @@
     "main_window": {
         "size": [
             1481,
-            1201
+            1000
         ],
         "position": [
-            157,
-            675
+            161,
+            855
         ]
     },
     "log_level": 10,
@@ -24,7 +24,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "*idn?",
+    "lineEdit_2": "CH1:SCA 5.0E0",
     "checkBox": true,
     "ip": "192.168.1.222"
 }
