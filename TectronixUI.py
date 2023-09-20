@@ -391,17 +391,18 @@ class MainWindow(QMainWindow):
             dts = self.dts()
             if self.device.connected:
                 plots = self.device.read_plots()
-                self.save_isf(plots, dts)
+                if len(plots) > 0:
+                    self.save_isf(plots, dts)
                 self.save_png(dts)
                 if self.rearm:
                     self.device.start_aq()
                 self.prev_plots = self.plots
-                if len(self.prev_plots) > 0:
-                    self.history.append(self.plots)
-                    self.history_index = len(self.history) - 1
+                if len(plots) > 0:
+                    self.history.append(plots)
                     n = len(self.history)
-                    self.horizontalScrollBar.maximum = n - 1
-                    self.horizontalScrollBar.value = n - 1
+                    self.history_index = n - 1
+                    self.horizontalScrollBar.setMaximum(n - 1)
+                    self.horizontalScrollBar.setSliderPosition(n - 1)
                 self.plots = plots
             for i in plots:
                 p = plots[i]
