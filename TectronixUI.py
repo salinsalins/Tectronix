@@ -134,6 +134,8 @@ class MainWindow(QMainWindow):
             self.lineEdit_14.setText(v)
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
+            v = self.device.send_command('HORizontal:TRIGger:POSition?')
+            self.lineEdit_16.setText(v)
             self.config['ip'] = ip
         else:
             self.logger.info("Oscilloscope is not connected")
@@ -154,6 +156,7 @@ class MainWindow(QMainWindow):
         self.lineEdit_13.editingFinished.connect(self.ch3_scale_changed)
         self.lineEdit_14.editingFinished.connect(self.ch4_scale_changed)
         self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
+        self.lineEdit_16.editingFinished.connect(self.horiz_positione_changed)
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
         self.pushButton_6.clicked.connect(self.single_seq_pressed)
         # self.pushButton_10.clicked.connect(self.prev_pressed)
@@ -200,6 +203,14 @@ class MainWindow(QMainWindow):
         v = self.lineEdit_15.text()
         self.device.send_command('HORizontal:MAIn:SCAle ' + str(v))
         v = self.device.send_command('HORizontal:MAIn:SCAle?')
+        self.lineEdit_15.blockSignals(True)
+        self.lineEdit_15.setText(v)
+        self.lineEdit_15.blockSignals(False)
+
+    def horiz_positione_changed(self):
+        v = self.lineEdit_16.text()
+        self.device.send_command('HORizontal:TRIGger:POSition ' + str(v))
+        v = self.device.send_command('HORizontal:TRIGger:POSition?')
         self.lineEdit_15.blockSignals(True)
         self.lineEdit_15.setText(v)
         self.lineEdit_15.blockSignals(False)

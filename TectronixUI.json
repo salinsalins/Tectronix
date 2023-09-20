@@ -2,11 +2,11 @@
     "main_window": {
         "size": [
             1481,
-            1000
+            826
         ],
         "position": [
-            122,
-            1146
+            99,
+            127
         ]
     },
     "log_level": 10,
@@ -24,7 +24,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "ch2:pos -4.0",
+    "lineEdit_2": "horizontal?",
     "checkBox": true,
     "ip": "192.168.1.222"
 }
