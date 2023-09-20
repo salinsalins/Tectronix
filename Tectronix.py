@@ -202,7 +202,7 @@ class TectronixTDS:
         self.tec_type = ''
         self.last_aq = ''
         self.connect(timeout=timeout)
-        self.send_command('HEADer 0')
+        # self.send_command('HEADer 0')
         self.set_config()
         if self.connected:
             self.logger.debug('%s at %s has been initialized (last_aq=%s) in %6.3f s',
@@ -236,20 +236,25 @@ class TectronixTDS:
         while n < self.retries:
             n += 1
             result = self._send_command(cmd)
+            result = self.strip_header(result)
             if result is not None:
-                if result.startswith(':'):
-                    with self.lock:
-                        result = tec_send_command(self.connection, 'HEADer 0')
-                        if result is None:
-                            continue
-                        result, status, data = tec_send_command(self.connection, cmd, True)
-                    self.response = (result, status, data)
                 if cmd.endswith('?'):
                     self.config[cmd] = result
-            if result is not None:
                 break
             self.logger.debug('Repeat %s %s', cmd, n)
         return result
+
+    def strip_header(self, result):
+        if result is None:
+            return None
+        if not result.startswith(':'):
+            return result
+        rs = result.split(';')
+        ri = []
+        for r in rs:
+            ri.append(r.split(" ")[1])
+        ro = ';'.join(ri)
+        return ro
 
     def _send_command(self, cmd):
         result = None
