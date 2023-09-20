@@ -304,6 +304,10 @@ class MainWindow(QMainWindow):
 
     def scroll_action(self, n):
         colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+        self.logger.debug('scroll to %s', n)
+        # return
+        if n >= len(self.history) - 1:
+            return
         data = self.history[n]
         for i in data:
             self.plot_trace(data[i], color=colors[i - 1])
@@ -389,6 +393,7 @@ class MainWindow(QMainWindow):
         if self.device.is_aq_finished():
             t = time.time()
             dts = self.dts()
+            plots = {}
             if self.device.connected:
                 plots = self.device.read_plots()
                 if len(plots) > 0:
@@ -397,27 +402,30 @@ class MainWindow(QMainWindow):
                 if self.rearm:
                     self.device.start_aq()
                 self.prev_plots = self.plots
-                if len(plots) > 0:
-                    self.history.append(plots)
-                    n = len(self.history)
-                    self.history_index = n - 1
-                    self.horizontalScrollBar.setMaximum(n - 1)
-                    self.horizontalScrollBar.setSliderPosition(n - 1)
                 self.plots = plots
             for i in plots:
                 p = plots[i]
-                s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
-                p['scale'] = s
-                p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
                 p['time'] = t
                 p['dts'] = dts
+                try:
+                    p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
+                    s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
+                except:
+                    p['pos'] = 0.0
+                    s = 1.0
+                p['scale'] = s
             axes = self.mplw.canvas.ax
             axes.set_yrange(-5.0, 5.0)
-            p = {}
             for i in plots:
                 p = plots[i]
                 p['y'] /= p['scale']
                 p['y'] += p['pos']
+            if len(plots) > 0:
+                self.history.append(plots)
+                n = len(self.history)
+                self.history_index = n - 1
+                self.horizontalScrollBar.setMaximum(n - 1)
+                self.horizontalScrollBar.setSliderPosition(n - 1)
             self.plot_data(plots)
             colors = ['y', 'c', 'm', 'g']
             try:
