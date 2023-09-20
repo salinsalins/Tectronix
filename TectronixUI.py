@@ -211,9 +211,9 @@ class MainWindow(QMainWindow):
         v = self.lineEdit_16.text()
         self.device.send_command('HORizontal:TRIGger:POSition ' + str(v))
         v = self.device.send_command('HORizontal:TRIGger:POSition?')
-        self.lineEdit_15.blockSignals(True)
-        self.lineEdit_15.setText(v)
-        self.lineEdit_15.blockSignals(False)
+        self.lineEdit_16.blockSignals(True)
+        self.lineEdit_16.setText(v)
+        self.lineEdit_16.blockSignals(False)
 
     def ch1_scale_changed(self):
         v = self.lineEdit_11.text()
@@ -356,7 +356,11 @@ class MainWindow(QMainWindow):
             axes.set_ylabel('Spectral Power, a.u.')
             axes.plot(fx, fp)
         elif self.comboBox.currentIndex() == 2:
-            fy = numpy.fft.rfft(y)
+            z = y - trace['pos']
+            z = z * trace['scale']
+            yy = y.copy()*0.0 +10.0
+            fy = numpy.power(yy, 1.667*z-11.46)
+            # fy = numpy.fft.rfft(y)
             fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
             fp = numpy.abs(fy) ** 2
             fp[0] = 0.0
@@ -366,7 +370,7 @@ class MainWindow(QMainWindow):
                 pf[i] = pf[i + 1] + fp[i]
             axes.set_xlabel('Frequency, Hz')
             axes.set_ylabel('Cumulative Power, a.u.')
-            axes.plot(fx, pf)
+            axes.plot(x, fy)
         else:
             evalsrt = ''
             try:
