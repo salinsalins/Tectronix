@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
         else:
             self.logger.info("Oscilloscope is not connected")
             # exit(-112)
+        self.trace_enable = {1: self.checkBox_12, 2: self.checkBox_11, 3: self.checkBox_14, 4: self.checkBox_13}
         # Connect signals with slots
         self.pushButton.clicked.connect(self.erase)
         self.comboBox.currentIndexChanged.connect(self.processing_changed)
@@ -155,11 +156,15 @@ class MainWindow(QMainWindow):
         self.lineEdit_15.editingFinished.connect(self.horiz_scale_changed)
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
         self.pushButton_6.clicked.connect(self.single_seq_pressed)
-        self.pushButton_10.clicked.connect(self.prev_pressed)
-        self.pushButton_7.clicked.connect(self.next_pressed)
+        # self.pushButton_10.clicked.connect(self.prev_pressed)
+        # self.pushButton_7.clicked.connect(self.next_pressed)
         self.pushButton_4.toggled.connect(self.run_toggled)
         self.pushButton_9.clicked.connect(self.send2_pressed)
         self.horizontalScrollBar.valueChanged.connect(self.scroll_action)
+        self.checkBox_12.clicked.connect(self.enable_clicked)
+        self.checkBox_11.clicked.connect(self.enable_clicked)
+        self.checkBox_14.clicked.connect(self.enable_clicked)
+        self.checkBox_13.clicked.connect(self.enable_clicked)
         #
         self.frame_6.hide()
         #
@@ -286,33 +291,24 @@ class MainWindow(QMainWindow):
         else:
             self.turn_ref()
 
-    def prev_pressed(self):
-        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
-        data = self.prev_plots
-        data = self.history[self.history_index]
-        self.history_index = max(self.history_index-1, 0)
-        for i in data:
-            self.plot_trace(data[i], color=colors[i - 1])
-
-    def next_pressed(self):
-        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
-        data = self.prev_plots
-        self.history_index = min(self.history_index+1, len(self.history)-1)
-        data = self.history[self.history_index]
-        for i in data:
-            self.plot_trace(data[i], color=colors[i - 1])
+    def enable_clicked(self):
+        self.plot_data()
 
     def scroll_action(self, n):
         colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
-        self.logger.debug('scroll to %s', n)
-        # return
         if n >= len(self.history) - 1:
+            self.lineEdit_4.setText('')
+            self.plot_data(self.history[-1])
             return
         data = self.history[n]
         for i in data:
-            self.plot_trace(data[i], color=colors[i - 1])
+            self.lineEdit_4.setText(data[i]['dts'])
+            if self.trace_enable[i].isChecked():
+                self.plot_trace(data[i], color=colors[i - 1])
 
-    def plot_data(self, data):
+    def plot_data(self, data=None):
+        if data is None:
+            data = self.plots
         colors = ['y', 'c', 'm', 'g']
         if self.checkBox.isChecked():
             self.erase()
@@ -321,7 +317,9 @@ class MainWindow(QMainWindow):
         # axes.grid(color='k', linestyle='--')
         axes.set_title('Data from ' + self.folder)
         for i in data:
-            self.plot_trace(data[i], color=colors[i - 1])
+            self.lineEdit_5.setText('Last Shot: ' + data[i]['dts'])
+            if self.trace_enable[i].isChecked():
+                self.plot_trace(data[i], color=colors[i - 1])
         # axes.legend()
         self.mplw.canvas.draw()
 
