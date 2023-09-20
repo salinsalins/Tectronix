@@ -110,8 +110,9 @@ class MainWindow(QMainWindow):
         if config is None or ip is None:
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
+        TectronixTDS.RECONNECT_TIMEOUT = 0.0
         self.device = TectronixTDS(ip=ip, config=config, timeout=1.0)
-        self.device.RECONNECT_TIMEOUT = 0.0
+        # self.device.RECONNECT_TIMEOUT = 0.0
         if self.device.connected:
             sel = self.device.config['SELect?'].split(';')
             v = sel[0] == '1'
@@ -126,13 +127,10 @@ class MainWindow(QMainWindow):
             # v = self.device.send_command('CH1:SCAle?')
             self.lineEdit_11.setText(v)
             v = self.device.config['CH2?'].split(';')[0]
-            # v = self.device.send_command('CH2:SCAle?')
             self.lineEdit_12.setText(v)
             v = self.device.config['CH3?'].split(';')[0]
-            # v = self.device.send_command('CH3:SCAle?')
             self.lineEdit_13.setText(v)
             v = self.device.config['CH4?'].split(';')[0]
-            # v = self.device.send_command('CH4:SCAle?')
             self.lineEdit_14.setText(v)
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
@@ -143,12 +141,9 @@ class MainWindow(QMainWindow):
         # Connect signals with slots
         self.pushButton.clicked.connect(self.erase)
         self.comboBox.currentIndexChanged.connect(self.processing_changed)
-        # self.listWidget.itemSelectionChanged.connect(self.list_selection_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
-
         self.pushButton_3.clicked.connect(self.send_command_pressed)
-
         self.checkBox_1.clicked.connect(self.ch1_clicked)
         self.checkBox_2.clicked.connect(self.ch2_clicked)
         self.checkBox_3.clicked.connect(self.ch3_clicked)
@@ -164,29 +159,11 @@ class MainWindow(QMainWindow):
         self.pushButton_7.clicked.connect(self.next_pressed)
         self.pushButton_4.toggled.connect(self.run_toggled)
         self.pushButton_9.clicked.connect(self.send2_pressed)
+        self.horizontalScrollBar.valueChanged.connect(self.scroll_action)
         #
         self.frame_6.hide()
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
-        # x = numpy.linspace(0.0, 4. * numpy.pi, 1000)
-        # y = numpy.sin(x)
-        # self.plotWidget = pyqtgraph.PlotWidget(parent=self.frame_3)
-        # self.frame_3.layout().addWidget(self.plotWidget)
-        # # self.plotWidget.getViewBox().setBackgroundColor('k')
-        # self.plotWidget.getViewBox().setBackgroundColor('#1d648da0')
-        # # font = QFont('Open Sans', 14, weight=QFont.Bold)
-        # font = QFont('Open Sans', 16)
-        # self.plotWidget.getPlotItem().getAxis("bottom").setTickFont(font)
-        # self.plotWidget.getPlotItem().getAxis("bottom").setStyle(tickTextOffset=16)
-        # self.plotWidget.getPlotItem().getAxis("left").setTickFont(font)
-        # self.plotWidget.getPlotItem().showGrid(True, True)
-        # self.plotWidget.getPlotItem().getAxis("bottom").label.setFont(font)
-        # self.plotWidget.getPlotItem().setLabel('bottom', 'Time', units='s')
-        # self.plotWidget.getPlotItem().getAxis("left").label.setFont(font)
-        # # self.plotWidget.getPlotItem().getAxis("left").setStyle(tickTextWidth=320, tickTextHeight=320)
-        # self.plotWidget.getPlotItem().setLabel('left', 'Signal', units='div')
-        # self.plotWidget.plot(x, y, pen={'color': 'g', 'width': 2})
-        # self.plot = self.plotWidget.plot
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -324,6 +301,13 @@ class MainWindow(QMainWindow):
         data = self.history[self.history_index]
         for i in data:
             self.plot_trace(data[i], color=colors[i - 1])
+
+    def scroll_action(self, n):
+        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+        data = self.history[n]
+        for i in data:
+            self.plot_trace(data[i], color=colors[i - 1])
+
     def plot_data(self, data):
         colors = ['y', 'c', 'm', 'g']
         if self.checkBox.isChecked():
@@ -403,6 +387,7 @@ class MainWindow(QMainWindow):
         else:
             self.turn_red()
         if self.device.is_aq_finished():
+            t = time.time()
             dts = self.dts()
             if self.device.connected:
                 plots = self.device.read_plots()
@@ -414,13 +399,17 @@ class MainWindow(QMainWindow):
                 if len(self.prev_plots) > 0:
                     self.history.append(self.plots)
                     self.history_index = len(self.history) - 1
+                    n = len(self.history)
+                    self.horizontalScrollBar.maximum = n - 1
+                    self.horizontalScrollBar.value = n - 1
                 self.plots = plots
-            p = {}
             for i in plots:
                 p = plots[i]
                 s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
                 p['scale'] = s
                 p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
+                p['time'] = t
+                p['dts'] = dts
             axes = self.mplw.canvas.ax
             axes.set_yrange(-5.0, 5.0)
             p = {}

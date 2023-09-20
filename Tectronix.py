@@ -239,14 +239,16 @@ class TectronixTDS:
             if result is not None:
                 if result.startswith(':'):
                     with self.lock:
-                        tec_send_command(self.connection, 'HEADer 0')
+                        result = tec_send_command(self.connection, 'HEADer 0')
+                        if result is None:
+                            continue
                         result, status, data = tec_send_command(self.connection, cmd, True)
                     self.response = (result, status, data)
                 if cmd.endswith('?'):
                     self.config[cmd] = result
-                if result is not None:
-                    break
-            self.logger.debug('Repeat %s', cmd)
+            if result is not None:
+                break
+            self.logger.debug('Repeat %s %s', cmd, n)
         return result
 
     def _send_command(self, cmd):
@@ -259,21 +261,21 @@ class TectronixTDS:
             with self.lock:
                 result, status, data = tec_send_command(self.connection, cmd, True)
             self.response = (result, status, data)
+            self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
         except KeyboardInterrupt:
             raise
         except (socket.timeout, http.client.CannotSendRequest, ConnectionRefusedError):
-            log_exception(self.logger, 'Send command %s exception', cmd)
+            log_exception(self.logger, 'Command "%s" exception:', cmd, no_info=True)
             self.disconnect()
-        self.logger.debug('%s -> "%s" %5.3f s', cmd, result, time.time() - t0)
         return result
 
     def reconnect(self):
         if self.connected:
             return True
-        if self.reconnect_time < time.time():
+        if self.reconnect_time <= time.time():
             self.logger.debug('Reconnecting')
             self.connect()
-            self.send_command('HEADer 0')
+            # self.send_command('HEADer 0')
             return self.connected
         else:
             return False
