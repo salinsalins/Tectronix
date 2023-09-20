@@ -391,6 +391,7 @@ class MainWindow(QMainWindow):
         if self.device.is_aq_finished():
             t = time.time()
             dts = self.dts()
+            dts2 = self.dts2()
             plots = {}
             if self.device.connected:
                 plots = self.device.read_plots()
@@ -404,7 +405,7 @@ class MainWindow(QMainWindow):
             for i in plots:
                 p = plots[i]
                 p['time'] = t
-                p['dts'] = dts
+                p['dts'] = dts2
                 try:
                     p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
                     s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
@@ -438,6 +439,9 @@ class MainWindow(QMainWindow):
 
     def dts(self):
         return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+
+    def dts2(self):
+        return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     def save_png(self, dts=None):
         data = self.device.get_image()
