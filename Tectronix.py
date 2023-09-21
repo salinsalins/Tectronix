@@ -326,28 +326,40 @@ class TectronixTDS:
     def get_data(self, ch_n):
         if not self.reconnect():
             return None
-        try:
-            with self.lock:
-                return tec_get_trace(self.connection, ch_n)
-        except KeyboardInterrupt:
-            raise
-        except:
-            return None
+        n = 0
+        while n < self.retries:
+            n += 1
+            try:
+                with self.lock:
+                    result = tec_get_trace(self.connection, ch_n)
+                    if result:
+                        return result
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
+            self.logger.debug('Repeat %s', n)
 
     def get_image(self):
         if not self.reconnect():
             return None
-        try:
-            with self.lock:
-                return tec_get_image_data(self.connection)
-        except KeyboardInterrupt:
-            raise
-        except:
-            return None
+        n = 0
+        while n < self.retries:
+            n += 1
+            try:
+                with self.lock:
+                    result = tec_get_image_data(self.connection)
+                    if result:
+                        return result
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
+            self.logger.debug('Repeat %s', n)
 
     def is_aq_finished(self):
         num_aq = self.send_command('ACQuire:NUMACq?')
-        if num_aq is not None and num_aq != self.last_aq:
+        if num_aq is not None and num_aq != '' and num_aq != self.last_aq:
             self.logger.info('New shot detected %s -> %s', num_aq, self.last_aq)
             self.last_aq = num_aq
             return True
@@ -355,19 +367,22 @@ class TectronixTDS:
 
     def is_armed(self):
         st = self.send_command('TRIGger:STATE?')
+        # READY TRIG SAV
         if st is not None:
             return st.upper().startswith('ARMED') or st.startswith('READY')
         return False
 
     def start_aq(self):
-        if self.send_command('ACQuire:STATE 0') is None:
+        if self.stop_aq() is None:
             return
-        self.send_command('ACQuire:STATE 1')
-        v = self.send_command('ACQuire:NUMACq?')
-        if v is None:
+        if self.send_command('ACQuire:STATE 1') is None:
             return
-        self.last_aq = v
-        return self.is_armed()
+        t0 = time.time()
+        while time.time() - t0 <= 3.0:
+            v = self.send_command('ACQuire:NUMACq?')
+            if v == '0':
+                self.last_aq = v
+                return True
 
     def stop_aq(self):
         if self.send_command('ACQuire:STATE 0') is None:
@@ -376,7 +391,7 @@ class TectronixTDS:
 
     def is_aq_in_progress(self):
         st = self.send_command('BUSY?')
-        if st is not None and st.upper().startswith('1'):
+        if st is not None and st.startswith('1'):
             return True
         return False
 
@@ -385,18 +400,15 @@ class TectronixTDS:
         if not self.connected:
             return {}
         sel = self.send_command('SEL?')
-        if sel is None or not self.connected:
+        if sel is None:
             return {}
         sel = sel.split(';')
         for i in range(4):
             if sel[i] == '1':
                 result = self.get_data(i + 1)
-                if result is None:
-                    result = self.get_data(i + 1)
-                if result is None:
-                    continue
-                x, y, h, isf = result
-                self.plots[i + 1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
+                if result is not None:
+                    x, y, h, isf = result
+                    self.plots[i + 1] = {'x': x, 'y': y, 'h': h, 'isf': isf}
         return self.plots
 
     def enable_channel(self, n):

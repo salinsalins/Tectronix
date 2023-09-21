@@ -361,10 +361,10 @@ class MainWindow(QMainWindow):
             self.erase()
         self.mplw.clearScaleHistory()
         axes = self.mplw.canvas.ax
-        # axes.grid(color='k', linestyle='--')
-        axes.set_title('Data from ' + self.folder)
         for i in data:
-            self.lineEdit_5.setText('Last Shot: ' + data[i]['dts'])
+            lst = 'Last Shot: ' + data[i]['dts']
+            self.lineEdit_5.setText(lst)
+            axes.set_title(lst)
             if self.trace_enable[i].isChecked():
                 self.plot_trace(data[i], color=colors[i - 1])
         # axes.legend()
@@ -374,8 +374,10 @@ class MainWindow(QMainWindow):
         axes = self.mplw.canvas.ax
         x = trace['x']
         y = trace['y']
-        p = trace['pos']
         if self.comboBox.currentIndex() == 0:
+            p = trace['pos']
+            y = (trace['y'] / trace['scale']) + p
+            axes.set_yrange(-5.0,5.0)
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Signal, div')
             axes.plot(x, y, color=color)
@@ -451,25 +453,20 @@ class MainWindow(QMainWindow):
                 self.save_png(dts)
                 if self.rearm:
                     self.device.start_aq()
-                self.prev_plots = self.plots
-                self.plots = plots
             for i in plots:
                 p = plots[i]
                 p['time'] = t
                 p['dts'] = dts2
+                p['pos'] = 0.0
+                p['scale'] = 1.0
                 try:
                     p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
-                    s = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
+                    p['scale'] = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
+                except KeyboardInterrupt:
+                    raise
                 except:
-                    p['pos'] = 0.0
-                    s = 1.0
-                p['scale'] = s
-            axes = self.mplw.canvas.ax
-            axes.set_yrange(-5.0, 5.0)
-            for i in plots:
-                p = plots[i]
-                p['y'] /= p['scale']
-                p['y'] += p['pos']
+                    pass
+            self.plots = plots
             if len(plots) > 0:
                 self.history.append(plots)
                 n = len(self.history)
@@ -486,6 +483,7 @@ class MainWindow(QMainWindow):
                 raise
             except:
                 clr = 'w'
+            axes = self.mplw.canvas.ax
             axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 1})
 
     def dts(self):

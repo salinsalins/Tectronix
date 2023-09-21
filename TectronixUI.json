@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1345,
+            1481,
             1000
         ],
         "position": [
-            216,
-            1070
+            122,
+            497
         ]
     },
     "log_level": 10,
@@ -24,7 +24,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "ch2:pos -4.0",
+    "lineEdit_2": "CH1:SCA 5.0E0",
     "checkBox": true,
     "ip": "192.168.1.222"
 }
