@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
         self.mplw.getPlotItem().setLabel('bottom', 'Time', units='s')
         self.mplw.getPlotItem().setLabel('left', 'Signal', units='div')
         self.plot = self.mplw.plot
-
+        #
         # Menu actions connection
         self.actionQuit.triggered.connect(qApp.quit)
         self.actionAbout.triggered.connect(self.show_about)
@@ -110,9 +110,11 @@ class MainWindow(QMainWindow):
         if config is None or ip is None:
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
+        #
         TectronixTDS.RECONNECT_TIMEOUT = 0.0
         self.device = TectronixTDS(ip=ip, config=config, timeout=1.0)
         # self.device.RECONNECT_TIMEOUT = 0.0
+        #
         if self.device.connected:
             sel = self.device.config['SELect?'].split(';')
             v = sel[0] == '1'
@@ -140,10 +142,11 @@ class MainWindow(QMainWindow):
         else:
             self.logger.info("Oscilloscope is not connected")
             # exit(-112)
+        #
         self.trace_enable = {1: self.checkBox_12, 2: self.checkBox_11, 3: self.checkBox_14, 4: self.checkBox_13}
         # Connect signals with slots
         self.pushButton.clicked.connect(self.erase)
-        self.comboBox.currentIndexChanged.connect(self.processing_changed)
+        # self.comboBox.currentIndexChanged.connect(self.processing_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
         self.pushButton_3.clicked.connect(self.send_command_pressed)
@@ -217,14 +220,13 @@ class MainWindow(QMainWindow):
 
     def ch1_scale_changed(self):
         v = self.lineEdit_11.text()
-        self.device.send_command('CH1:SCAle ' + str(v))
-        v = self.device.send_command('CH1:SCAle?')
-        self.lineEdit_11.blockSignals(True)
-        self.lineEdit_11.setText(v)
-        self.lineEdit_11.blockSignals(False)
+        self.logger.debug("******* scale %s", v)
+        # self.device.send_command('CH1:SCAle ' + str(v))
+        self.set_widget_float(self.lineEdit_11, 'CH1:SCAle')
 
     def ch2_scale_changed(self):
         v = self.lineEdit_12.text()
+        self.logger.debug("******* scale %s", v)
         self.device.send_command('CH2:SCAle ' + str(v))
         v = self.device.send_command('CH2:SCAle?')
         self.lineEdit_12.blockSignals(True)
@@ -240,36 +242,70 @@ class MainWindow(QMainWindow):
         self.lineEdit_13.blockSignals(False)
 
     def ch4_scale_changed(self):
-        v = self.lineEdit_12.text()
+        v = self.lineEdit_14.text()
         self.device.send_command('CH4:SCAle ' + str(v))
         v = self.device.send_command('CH4:SCAle?')
         self.lineEdit_14.blockSignals(True)
         self.lineEdit_14.setText(v)
         self.lineEdit_14.blockSignals(False)
 
+    def update_widget(self, widget, command, function=None):
+        v = self.device.send_command(command)
+        widget.blockSignals(True)
+        if function is not None:
+            if hasattr(widget, function):
+                attr = getattr(widget, function)
+                attr(v)
+        else:
+            if hasattr(widget, 'setText'):
+                widget.setText(v)
+            elif hasattr(widget, 'setChecked'):
+                widget.setChecked(bool(v))
+            elif hasattr(widget, 'setValue'):
+                widget.setValue(v)
+        widget.blockSignals(False)
+
+    def set_widget_float(self, widget, command):
+        v = ''
+        if hasattr(widget, 'text'):
+            v = widget.text()
+        elif hasattr(widget, 'value'):
+            v = widget.value()
+        v = str(v)
+        try:
+            f = float(v)
+            self.device.send_command(command + ' ' + v)
+            # self.update_widget(widget, command + '?')
+        except ValueError:
+            return
+
     def ch1_clicked(self):
         if self.checkBox_1.isChecked():
             self.device.send_command('SELect:CH1 1')
         else:
             self.device.send_command('SELect:CH1 0')
+        self.update_widget(self.checkBox_1, 'SELect:CH1?')
 
     def ch2_clicked(self):
         if self.checkBox_2.isChecked():
             self.device.send_command('SELect:CH2 1')
         else:
             self.device.send_command('SELect:CH2 0')
+        self.update_widget(self.checkBox_2, 'SELect:CH2?')
 
     def ch3_clicked(self):
         if self.checkBox_3.isChecked():
             self.device.send_command('SELect:CH3 1')
         else:
             self.device.send_command('SELect:CH3 0')
+        self.update_widget(self.checkBox_3, 'SELect:CH3?')
 
     def ch4_clicked(self):
         if self.checkBox_4.isChecked():
             self.device.send_command('SELect:CH4 1')
         else:
             self.device.send_command('SELect:CH4 0')
+        self.update_widget(self.checkBox_4, 'SELect:CH4?')
 
     def turn_color(self, widget, color='white'):
         widget.setStyleSheet('QCheckBox::indicator:unchecked {background-color: %s;}' % color)
