@@ -12,17 +12,21 @@ from PyQt5.QtWidgets import QMenu
 from pyqtgraph.Qt import QtCore
 
 import pyqtgraph
+
 # pg = pyqtgraph
 
 # pyqtgraph.setConfigOption('background', '#1d648d')
 pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', 'k')
+
+
 # pyqtgraph.setConfigOption('antialias', True)
 # pyqtgraph.setConfigOption('leftButtonPan', False)
 
 
 class CustomViewBox(pyqtgraph.ViewBox):
     MENU = []
+
     def __init__(self, parent=None, *args, **kwds):
         super().__init__(parent, *args, **kwds)
         self.setMouseMode(self.RectMode)
@@ -128,6 +132,9 @@ class MplAdapter:
         # self.plot_item_count = 0
         # super().__init__()
 
+    def __getattr__(self, name):
+        return getattr(self.item, name)
+
     def grid(self, val=True):
         self.item.getPlotItem().showGrid(val, val)
 
@@ -142,6 +149,9 @@ class MplAdapter:
 
     def set_yrange(self, val1, val2):
         self.item.setYRange(val1, val2)
+
+    def set_xrange(self, val1, val2):
+        self.item.setXRange(val1, val2)
 
     def draw(self, val=''):
         pass

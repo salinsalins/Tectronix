@@ -2,22 +2,14 @@
     "main_window": {
         "size": [
             1481,
-            1046
+            892
         ],
         "position": [
-            114,
-            662
+            2359,
+            99
         ]
     },
     "log_level": 10,
-    "comboBox": {
-        "items": [
-            "Signal",
-            "FFT",
-            "Cumulative"
-        ],
-        "index": 0
-    },
     "comboBox_2": {
         "items": [
             "D:/tec_data"

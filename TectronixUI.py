@@ -48,7 +48,7 @@ from pyqtgraphwidget import MplWidget
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '2.0'
+APPLICATION_VERSION = '3.1'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
@@ -72,7 +72,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
         restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+                         widgets=(self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.folder = self.config.get('folder', 'D:/tec_data')
         if self.comboBox_2.findText(self.folder) < 0:
             self.comboBox_2.insertItem(0, self.folder)
@@ -129,15 +129,18 @@ class MainWindow(QMainWindow):
             self.checkBox_3.setChecked(v)
             v = sel[3] == '1'
             self.checkBox_4.setChecked(v)
-            v = self.device.config['CH1?'].split(';')[0]
-            # v = self.device.send_command('CH1:SCAle?')
-            self.lineEdit_11.setText(v)
-            v = self.device.config['CH2?'].split(';')[0]
-            self.lineEdit_12.setText(v)
-            v = self.device.config['CH3?'].split(';')[0]
-            self.lineEdit_13.setText(v)
-            v = self.device.config['CH4?'].split(';')[0]
-            self.lineEdit_14.setText(v)
+            v = self.device.config['CH1?'].split(';')
+            self.lineEdit_11.setText(v[0])
+            self.lineEdit_17.setText(v[1])
+            v = self.device.config['CH2?'].split(';')
+            self.lineEdit_12.setText(v[0])
+            self.lineEdit_18.setText(v[1])
+            v = self.device.config['CH3?'].split(';')
+            self.lineEdit_13.setText(v[0])
+            self.lineEdit_19.setText(v[1])
+            v = self.device.config['CH4?'].split(';')
+            self.lineEdit_14.setText(v[0])
+            self.lineEdit_20.setText(v[1])
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
             v = self.device.send_command('HORizontal:TRIGger:POSition?')
@@ -150,7 +153,7 @@ class MainWindow(QMainWindow):
         self.trace_enable = {1: self.checkBox_12, 2: self.checkBox_11, 3: self.checkBox_14, 4: self.checkBox_13}
         # Connect signals with slots
         self.pushButton.clicked.connect(self.erase)
-        # self.comboBox.currentIndexChanged.connect(self.processing_changed)
+        self.comboBox.currentIndexChanged.connect(self.processing_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
         self.comboBox_2.currentIndexChanged.connect(self.folder_changed)
         self.pushButton_3.clicked.connect(self.send_command_pressed)
@@ -162,6 +165,10 @@ class MainWindow(QMainWindow):
         self.lineEdit_12.returnPressed.connect(self.ch2_scale_changed)
         self.lineEdit_13.returnPressed.connect(self.ch3_scale_changed)
         self.lineEdit_14.returnPressed.connect(self.ch4_scale_changed)
+        self.lineEdit_17.returnPressed.connect(self.ch1_position_changed)
+        self.lineEdit_18.returnPressed.connect(self.ch2_position_changed)
+        self.lineEdit_19.returnPressed.connect(self.ch3_position_changed)
+        self.lineEdit_20.returnPressed.connect(self.ch4_position_changed)
         self.lineEdit_15.returnPressed.connect(self.horiz_scale_changed)
         self.lineEdit_16.returnPressed.connect(self.horiz_position_changed)
         self.pushButton_5.clicked.connect(self.force_trigger_pressed)
@@ -208,6 +215,18 @@ class MainWindow(QMainWindow):
 
     def horiz_position_changed(self):
         self.set_widget_float(self.lineEdit_16, 'HORizontal:TRIGger:POSition')
+
+    def ch1_position_changed(self):
+        self.set_widget_float(self.lineEdit_17, 'CH1:POS')
+
+    def ch2_position_changed(self):
+        self.set_widget_float(self.lineEdit_18, 'CH2:POS')
+
+    def ch3_position_changed(self):
+        self.set_widget_float(self.lineEdit_19, 'CH3:POS')
+
+    def ch4_position_changed(self):
+        self.set_widget_float(self.lineEdit_20, 'CH4:POS')
 
     def ch1_scale_changed(self):
         self.set_widget_float(self.lineEdit_11, 'CH1:SCAle')
@@ -366,16 +385,16 @@ class MainWindow(QMainWindow):
             fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
             fp = numpy.abs(fy) ** 2
             fp[0] = 0.0
-            self.mplw.autoRange()
             axes.set_xlabel('Frequency, Hz')
             axes.set_ylabel('Spectral Power, a.u.')
             axes.plot(fx, fp, color=color)
+            self.mplw.autoRange()
         elif self.comboBox.currentIndex() == 2:
             fy = numpy.power(10.0, 1.667*y-11.46)
-            self.mplw.autoRange()
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Pressure, Pa')
             axes.plot(x, fy, color=color)
+            self.mplw.autoRange()
         else:
             evalsrt = ''
             try:
@@ -383,8 +402,8 @@ class MainWindow(QMainWindow):
                 axes.set_ylabel('Processed Signal, a.u.')
                 evalsrt = self.comboBox.currentText()
                 (xp, yp) = eval(evalsrt)
-                self.mplw.autoRange()
                 axes.plot(xp, yp, color=color)
+                self.mplw.autoRange()
             except KeyboardInterrupt:
                 raise
             except:
@@ -400,7 +419,7 @@ class MainWindow(QMainWindow):
         self.frame_6.hide()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+                      widgets=(self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.device.disconnect()
 
     def timer_handler(self):
