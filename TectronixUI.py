@@ -14,6 +14,7 @@ import os.path
 import sys
 import time
 import numpy
+import scipy
 
 import PyQt5
 import pyqtgraph
@@ -56,7 +57,7 @@ FALSE = [False, None, 'False', 'false', '0', '0.0', 0, 0.0]
 
 class MainWindow(QMainWindow):
     PLOT_COLORS = ['y', 'c', 'm', 'g']
-    FADED_COLORS = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+    FADED_COLORS = [(200, 200, 0), (0, 200, 200), (200, 0, 200), (0, 200, 0)]
 
     def __init__(self, parent=None):
         # Initialization of the superclass
@@ -120,31 +121,7 @@ class MainWindow(QMainWindow):
         # self.device.RECONNECT_TIMEOUT = 0.0
         #
         if self.device.connected:
-            sel = self.device.config['SELect?'].split(';')
-            v = sel[0] == '1'
-            self.checkBox_1.setChecked(v)
-            v = sel[1] == '1'
-            self.checkBox_2.setChecked(v)
-            v = sel[2] == '1'
-            self.checkBox_3.setChecked(v)
-            v = sel[3] == '1'
-            self.checkBox_4.setChecked(v)
-            v = self.device.config['CH1?'].split(';')
-            self.lineEdit_11.setText(v[0])
-            self.lineEdit_17.setText(v[1])
-            v = self.device.config['CH2?'].split(';')
-            self.lineEdit_12.setText(v[0])
-            self.lineEdit_18.setText(v[1])
-            v = self.device.config['CH3?'].split(';')
-            self.lineEdit_13.setText(v[0])
-            self.lineEdit_19.setText(v[1])
-            v = self.device.config['CH4?'].split(';')
-            self.lineEdit_14.setText(v[0])
-            self.lineEdit_20.setText(v[1])
-            v = self.device.send_command('HORizontal:MAIn:SCAle?')
-            self.lineEdit_15.setText(v)
-            v = self.device.send_command('HORizontal:TRIGger:POSition?')
-            self.lineEdit_16.setText(v)
+            self.read_config()
             self.config['ip'] = ip
         else:
             self.logger.info("Oscilloscope is not connected")
@@ -152,6 +129,7 @@ class MainWindow(QMainWindow):
         #
         self.trace_enable = {1: self.checkBox_12, 2: self.checkBox_11, 3: self.checkBox_14, 4: self.checkBox_13}
         # Connect signals with slots
+        self.pushButton_7.clicked.connect(self.read_config)
         self.pushButton.clicked.connect(self.erase)
         self.comboBox.currentIndexChanged.connect(self.processing_changed)
         self.pushButton_2.clicked.connect(self.select_folder)
@@ -186,6 +164,35 @@ class MainWindow(QMainWindow):
         self.frame_6.hide()
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
+
+
+    def read_config(self):
+        if self.device.connected:
+            sel = self.device.config['SELect?'].split(';')
+            v = sel[0] == '1'
+            self.checkBox_1.setChecked(v)
+            v = sel[1] == '1'
+            self.checkBox_2.setChecked(v)
+            v = sel[2] == '1'
+            self.checkBox_3.setChecked(v)
+            v = sel[3] == '1'
+            self.checkBox_4.setChecked(v)
+            v = self.device.config['CH1?'].split(';')
+            self.lineEdit_11.setText(v[0])
+            self.lineEdit_17.setText(v[1])
+            v = self.device.config['CH2?'].split(';')
+            self.lineEdit_12.setText(v[0])
+            self.lineEdit_18.setText(v[1])
+            v = self.device.config['CH3?'].split(';')
+            self.lineEdit_13.setText(v[0])
+            self.lineEdit_19.setText(v[1])
+            v = self.device.config['CH4?'].split(';')
+            self.lineEdit_14.setText(v[0])
+            self.lineEdit_20.setText(v[1])
+            v = self.device.send_command('HORizontal:MAIn:SCAle?')
+            self.lineEdit_15.setText(v)
+            v = self.device.send_command('HORizontal:TRIGger:POSition?')
+            self.lineEdit_16.setText(v)
 
     def erase(self):
         self.mplw.canvas.ax.clear()
