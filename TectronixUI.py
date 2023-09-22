@@ -55,6 +55,9 @@ UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 FALSE = [False, None, 'False', 'false', '0', '0.0', 0, 0.0]
 
 class MainWindow(QMainWindow):
+    PLOT_COLORS = ['y', 'c', 'm', 'g']
+    FADED_COLORS = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+
     def __init__(self, parent=None):
         # Initialization of the superclass
         super(MainWindow, self).__init__(parent)
@@ -179,8 +182,6 @@ class MainWindow(QMainWindow):
 
     def erase(self):
         self.mplw.canvas.ax.clear()
-        ###self.list_selection_changed()
-        # self.mplw.canvas.draw()
 
     def send_command_pressed(self):
         txt = self.lineEdit_2.text()
@@ -189,35 +190,24 @@ class MainWindow(QMainWindow):
         dt = time.time() - t0
         self.label_11.setText("%5.3f" % dt)
         self.lineEdit_3.setText(str(self.device.response[0]))
-        # self.label_6.setText(self.device.response[0])
 
     def send2_pressed(self):
         txt = self.comboBox_3.currentText()
-        t0 = time.time()
+        h = self.device.send_command('HEADer?')
         self.device._send_command('HEADer 1')
         self.device._send_command(txt)
-        dt = time.time() - t0
         self.textEdit.setText(str(self.device.response[0]))
-        self.device._send_command('HEADer 0')
+        if h == '0':
+            self.device.send_command('HEADer 0')
 
     def force_trigger_pressed(self):
         self.device.send_command('TRIG FORC')
 
     def horiz_scale_changed(self):
-        v = self.lineEdit_15.text()
-        self.device.send_command('HORizontal:MAIn:SCAle ' + str(v))
-        v = self.device.send_command('HORizontal:MAIn:SCAle?')
-        self.lineEdit_15.blockSignals(True)
-        self.lineEdit_15.setText(v)
-        self.lineEdit_15.blockSignals(False)
+        self.set_widget_float(self.lineEdit_15, 'HORizontal:MAIn:SCAle')
 
     def horiz_position_changed(self):
-        v = self.lineEdit_16.text()
-        self.device.send_command('HORizontal:TRIGger:POSition ' + str(v))
-        v = self.device.send_command('HORizontal:TRIGger:POSition?')
-        self.lineEdit_16.blockSignals(True)
-        self.lineEdit_16.setText(v)
-        self.lineEdit_16.blockSignals(False)
+        self.set_widget_float(self.lineEdit_16, 'HORizontal:TRIGger:POSition')
 
     def ch1_scale_changed(self):
         self.set_widget_float(self.lineEdit_11, 'CH1:SCAle')
@@ -327,29 +317,28 @@ class MainWindow(QMainWindow):
     def enable_clicked(self):
         self.plot_data()
 
-    def scroll_action(self, n):
-        colors = [(155, 155, 0), (0, 155, 155), (155, 0, 155), (0, 155, 0)]
+    def scroll_action(self, n, colors=None):
+        if colors is None:
+            colors = self.FADED_COLORS
         if n >= len(self.history) - 1:
-            self.lineEdit_4.setText('')
-            self.plot_data(self.history[-1])
-            return
+            colors = self.PLOT_COLORS
         data = self.history[n]
         for i in data:
             self.lineEdit_4.setText(data[i]['dts'])
             if self.trace_enable[i].isChecked():
                 self.plot_trace(data[i], color=colors[i - 1])
 
-    def plot_data(self, data=None):
+    def plot_data(self, data=None, colors=None):
         if data is None:
             data = self.plots
-        colors = ['y', 'c', 'm', 'g']
+        if colors is None:
+            colors = self.PLOT_COLORS
         if self.checkBox.isChecked():
             self.erase()
         self.mplw.clearScaleHistory()
         axes = self.mplw.canvas.ax
         for i in data:
             lst = 'Last Shot: ' + data[i]['dts']
-            self.lineEdit_5.setText(lst)
             axes.set_title(lst)
             if self.trace_enable[i].isChecked():
                 self.plot_trace(data[i], color=colors[i - 1])
@@ -376,25 +365,15 @@ class MainWindow(QMainWindow):
             fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
             fp = numpy.abs(fy) ** 2
             fp[0] = 0.0
+            axes.set_yrange()
             axes.set_xlabel('Frequency, Hz')
             axes.set_ylabel('Spectral Power, a.u.')
-            axes.plot(fx, fp)
+            axes.plot(fx, fp, color=color)
         elif self.comboBox.currentIndex() == 2:
-            z = y - trace['pos']
-            z = z * trace['scale']
-            yy = y.copy()*0.0 +10.0
-            fy = numpy.power(yy, 1.667*z-11.46)
-            # fy = numpy.fft.rfft(y)
-            fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
-            fp = numpy.abs(fy) ** 2
-            fp[0] = 0.0
-            pf = fp * 0.0
-            pf[-1] = fp[-1]
-            for i in range(fx.size - 2, -1, -1):
-                pf[i] = pf[i + 1] + fp[i]
-            axes.set_xlabel('Frequency, Hz')
-            axes.set_ylabel('Cumulative Power, a.u.')
-            axes.plot(x, fy)
+            fy = numpy.power(10.0, 1.667*y-11.46)
+            axes.set_xlabel('Time, s')
+            axes.set_ylabel('Pressure, Pa')
+            axes.plot(x, fy, color=color)
         else:
             evalsrt = ''
             try:
@@ -402,7 +381,9 @@ class MainWindow(QMainWindow):
                 axes.set_ylabel('Processed Signal, a.u.')
                 evalsrt = self.comboBox.currentText()
                 (xp, yp) = eval(evalsrt)
-                axes.plot(xp, yp)
+                axes.plot(xp, yp, color=color)
+            except KeyboardInterrupt:
+                raise
             except:
                 self.logger.warning('eval() ERROR in %s' % evalsrt)
 
@@ -412,21 +393,29 @@ class MainWindow(QMainWindow):
                                 '\nTextronix oscilloscope control utility.', QMessageBox.Ok)
 
     def on_quit(self):
+        timer.stop()
         self.frame_6.hide()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
                       widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
-        timer.stop()
-        self.device.connection.close()
+        self.device.disconnect()
 
     def timer_handler(self):
         t = time.strftime('%H:%M:%S')
         self.clock.setText(t)
-        plots = {}
-        if self.device.is_armed():
+        st = self.device.send_command('TRIGger:STATE?')
+        if st is None:
+            return
+        if st.startswith('READY'):
             self.turn_green()
-        else:
-            self.turn_red()
+        elif st.startswith('ARMED'):
+            self.turn_color(self.checkBox_5, 'yellow')
+        elif st.startswith('SAV'):
+            self.turn_color(self.checkBox_5, 'red')
+        elif st.startswith('TRIG'):
+            self.turn_color(self.checkBox_5, 'blue')
+        elif st.startswith('AUTO'):
+            self.turn_color(self.checkBox_5, 'magenta')
         if self.device.is_aq_finished():
             t = time.time()
             dts = self.dts()
@@ -472,16 +461,16 @@ class MainWindow(QMainWindow):
             axes = self.mplw.canvas.ax
             axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 1})
 
-    def dts(self):
+    @staticmethod
+    def dts():
         return datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
 
-    def dts2(self):
+    @staticmethod
+    def dts2():
         return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     def save_png(self, dts=None):
         data = self.device.get_image()
-        if data is None:
-            data = self.device.get_image()
         if data is None:
             self.logger.info("Can not read image")
             return
@@ -493,11 +482,11 @@ class MainWindow(QMainWindow):
             fid.write(data)
         self.logger.info("png file saved to %s", fn)
 
-    def save_isf(self, plots, dts=None, chnl=None):
+    def save_isf(self, plots, dts=None, chnls=None):
         if dts is None:
             dts = self.dts()
         for i in plots:
-            if chnl is None or chnl == i:
+            if chnls is None or i in chnls:
                 file_name = dts + '-CH%s.isf' % i
                 fn = os.path.join(self.out_dir, file_name)
                 isf = plots[i]['isf']
@@ -539,13 +528,12 @@ class MainWindow(QMainWindow):
 
     def folder_changed(self, m):
         folder = self.comboBox_2.currentText()
-        # self.folder = self.comboBox_2.itemText(m)
         self.folder = folder
         self.make_data_folder()
 
     def processing_changed(self, m):
         self.erase()
-        # self.list_selection_changed()
+        self.plot_data()
 
     @staticmethod
     def get_log_folder():

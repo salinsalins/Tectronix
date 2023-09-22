@@ -324,37 +324,35 @@ class TectronixTDS:
         self.last_aq = self.config['ACQuire:NUMACq']
 
     def get_data(self, ch_n):
-        if not self.reconnect():
-            return None
         n = 0
         while n < self.retries:
             n += 1
-            try:
-                with self.lock:
-                    result = tec_get_trace(self.connection, ch_n)
-                    if result:
-                        return result
-            except KeyboardInterrupt:
-                raise
-            except:
-                pass
+            if self.reconnect():
+                try:
+                    with self.lock:
+                        result = tec_get_trace(self.connection, ch_n)
+                        if result:
+                            return result
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    pass
             self.logger.debug('Repeat %s', n)
 
     def get_image(self):
-        if not self.reconnect():
-            return None
         n = 0
         while n < self.retries:
             n += 1
-            try:
-                with self.lock:
-                    result = tec_get_image_data(self.connection)
-                    if result:
-                        return result
-            except KeyboardInterrupt:
-                raise
-            except:
-                pass
+            if self.reconnect():
+                try:
+                    with self.lock:
+                        result = tec_get_image_data(self.connection)
+                        if result:
+                            return result
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    pass
             self.logger.debug('Repeat %s', n)
 
     def is_aq_finished(self):
