@@ -157,7 +157,7 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="2" alignment="Qt::AlignRight">
+          <item row="0" column="2" alignment="Qt::AlignHCenter">
            <widget class="QLabel" name="label_8">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -195,7 +195,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -267,7 +267,7 @@
              </size>
             </property>
             <property name="text">
-             <string>Position </string>
+             <string>Position %</string>
             </property>
             <property name="textFormat">
              <enum>Qt::PlainText</enum>
@@ -327,7 +327,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -398,7 +398,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -446,7 +446,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -587,7 +587,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -613,7 +613,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -664,7 +664,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>70</width>
               <height>16777215</height>
              </size>
             </property>
@@ -680,6 +680,82 @@
             </property>
             <property name="text">
              <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="label_9">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Div</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLineEdit" name="lineEdit_18">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLineEdit" name="lineEdit_19">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLineEdit" name="lineEdit_20">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -713,31 +789,6 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_5">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>
@@ -925,7 +976,7 @@
             </item>
             <item>
              <property name="text">
-              <string>Cumulative</string>
+              <string>Pressure</string>
              </property>
             </item>
            </widget>
@@ -1261,7 +1312,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>34</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="font">

@@ -352,7 +352,8 @@ class MainWindow(QMainWindow):
         if self.comboBox.currentIndex() == 0:
             p = trace['pos']
             y = (trace['y'] / trace['scale']) + p
-            axes.set_yrange(-5.0,5.0)
+            axes.set_yrange(-5.0, 5.0)
+            axes.set_xrange(x[0], x[-1])
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Signal, div')
             axes.plot(x, y, color=color)
@@ -365,12 +366,13 @@ class MainWindow(QMainWindow):
             fx = numpy.arange(len(fy)) / len(y) / (x[1] - x[0])
             fp = numpy.abs(fy) ** 2
             fp[0] = 0.0
-            axes.set_yrange()
+            self.mplw.autoRange()
             axes.set_xlabel('Frequency, Hz')
             axes.set_ylabel('Spectral Power, a.u.')
             axes.plot(fx, fp, color=color)
         elif self.comboBox.currentIndex() == 2:
             fy = numpy.power(10.0, 1.667*y-11.46)
+            self.mplw.autoRange()
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Pressure, Pa')
             axes.plot(x, fy, color=color)
@@ -381,6 +383,7 @@ class MainWindow(QMainWindow):
                 axes.set_ylabel('Processed Signal, a.u.')
                 evalsrt = self.comboBox.currentText()
                 (xp, yp) = eval(evalsrt)
+                self.mplw.autoRange()
                 axes.plot(xp, yp, color=color)
             except KeyboardInterrupt:
                 raise
