@@ -378,7 +378,7 @@ class TectronixTDS:
         if self.send_command('ACQuire:STATE 1') is None:
             return
         t0 = time.time()
-        while time.time() - t0 <= 3.0:
+        while time.time() - t0 <= 1.0:
             v = self.send_command('ACQuire:NUMACq?')
             if v == '0':
                 self.last_aq = v

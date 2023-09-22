@@ -52,6 +52,7 @@ APPLICATION_VERSION = '2.0'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
+FALSE = [False, None, 'False', 'false', '0', '0.0', 0, 0.0]
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -219,63 +220,47 @@ class MainWindow(QMainWindow):
         self.lineEdit_16.blockSignals(False)
 
     def ch1_scale_changed(self):
-        v = self.lineEdit_11.text()
-        self.logger.debug("******* scale %s", v)
-        # self.device.send_command('CH1:SCAle ' + str(v))
         self.set_widget_float(self.lineEdit_11, 'CH1:SCAle')
 
     def ch2_scale_changed(self):
-        v = self.lineEdit_12.text()
-        self.logger.debug("******* scale %s", v)
-        self.device.send_command('CH2:SCAle ' + str(v))
-        v = self.device.send_command('CH2:SCAle?')
-        self.lineEdit_12.blockSignals(True)
-        self.lineEdit_12.setText(v)
-        self.lineEdit_12.blockSignals(False)
+        self.set_widget_float(self.lineEdit_12, 'CH2:SCAle')
 
     def ch3_scale_changed(self):
-        v = self.lineEdit_13.text()
-        self.device.send_command('CH3:SCAle ' + str(v))
-        v = self.device.send_command('CH3:SCAle?')
-        self.lineEdit_13.blockSignals(True)
-        self.lineEdit_13.setText(v)
-        self.lineEdit_13.blockSignals(False)
+        self.set_widget_float(self.lineEdit_13, 'CH3:SCAle')
 
     def ch4_scale_changed(self):
-        v = self.lineEdit_14.text()
-        self.device.send_command('CH4:SCAle ' + str(v))
-        v = self.device.send_command('CH4:SCAle?')
-        self.lineEdit_14.blockSignals(True)
-        self.lineEdit_14.setText(v)
-        self.lineEdit_14.blockSignals(False)
+        self.set_widget_float(self.lineEdit_14, 'CH4:SCAle')
 
     def update_widget(self, widget, command, function=None):
         v = self.device.send_command(command)
+        if v is None:
+            return
         widget.blockSignals(True)
         if function is not None:
             if hasattr(widget, function):
                 attr = getattr(widget, function)
                 attr(v)
         else:
-            if hasattr(widget, 'setText'):
-                widget.setText(v)
-            elif hasattr(widget, 'setChecked'):
-                widget.setChecked(bool(v))
+            if hasattr(widget, 'setChecked'):
+                widget.setChecked(v not in FALSE)
             elif hasattr(widget, 'setValue'):
                 widget.setValue(v)
+            elif hasattr(widget, 'setText'):
+                widget.setText(v)
         widget.blockSignals(False)
 
     def set_widget_float(self, widget, command):
         v = ''
-        if hasattr(widget, 'text'):
-            v = widget.text()
-        elif hasattr(widget, 'value'):
+        if hasattr(widget, 'value'):
             v = widget.value()
+        elif hasattr(widget, 'text'):
+            v = widget.text()
         v = str(v)
         try:
             f = float(v)
-            self.device.send_command(command + ' ' + v)
-            # self.update_widget(widget, command + '?')
+            if self.device.send_command(command + ' ' + v) is None:
+                return
+            self.update_widget(widget, command + '?')
         except ValueError:
             return
 
@@ -319,9 +304,10 @@ class MainWindow(QMainWindow):
 
     def run_toggled(self):
         if self.pushButton_4.isChecked():
-            self.device.start_aq()
+            a = self.device.start_aq()
             self.pushButton_4.setText('Stop')
-            self.turn_green()
+            if a:
+                self.turn_green()
             # self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
             self.rearm = True
         else:
