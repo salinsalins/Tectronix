@@ -73,7 +73,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
         restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.comboBox_2, self.lineEdit_2, self.checkBox))
+                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+        if self.comboBox.findText(self.folder) < 0:
+            pass
         self.folder = self.config.get('folder', 'D:/tec_data')
         if self.comboBox_2.findText(self.folder) < 0:
             self.comboBox_2.insertItem(0, self.folder)
@@ -116,9 +118,11 @@ class MainWindow(QMainWindow):
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
         #
-        TectronixTDS.RECONNECT_TIMEOUT = 0.0
-        self.device = TectronixTDS(ip=ip, config=config, timeout=1.0)
-        # self.device.RECONNECT_TIMEOUT = 0.0
+        reconnect_timeout = self.config.get('reconnect_timeout', 0.0)
+        TectronixTDS.RECONNECT_TIMEOUT = reconnect_timeout
+        timeout = self.config.get('timeout', 1.0)
+        port = self.config.get('port', '')
+        self.device = TectronixTDS(ip=ip, config=config, port=port, timeout=timeout)
         #
         if self.device.connected:
             self.read_config()
@@ -403,18 +407,19 @@ class MainWindow(QMainWindow):
             axes.plot(x, fy, color=color)
             self.mplw.autoRange()
         else:
-            evalsrt = ''
+            evalstr = ''
             try:
                 axes.set_xlabel('X value, a.u.')
                 axes.set_ylabel('Processed Signal, a.u.')
-                evalsrt = self.comboBox.currentText()
-                (xp, yp) = eval(evalsrt)
-                axes.plot(xp, yp, color=color)
-                self.mplw.autoRange()
+                evalstr = self.comboBox.currentText()
+                if evalstr:
+                    (xp, yp) = eval(evalstr)
+                    axes.plot(xp, yp, color=color)
+                    self.mplw.autoRange()
             except KeyboardInterrupt:
                 raise
             except:
-                self.logger.warning('eval() ERROR in %s' % evalsrt)
+                self.logger.warning('eval() ERROR in %s' % evalstr)
 
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME +
@@ -426,7 +431,7 @@ class MainWindow(QMainWindow):
         self.frame_6.hide()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.comboBox_2, self.lineEdit_2, self.checkBox))
+                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
         self.device.disconnect()
 
     def timer_handler(self):

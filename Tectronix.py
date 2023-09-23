@@ -177,7 +177,7 @@ class TectronixTDS:
         # '*idn?': ''
     }
 
-    def __init__(self, ip=None, timeout=1.0, config=None, logger=None):
+    def __init__(self, ip=None, timeout=1.0, config=None, port=None, logger=None):
         t0 = time.time()
         if logger is None:
             self.logger = config_logger()
@@ -190,19 +190,17 @@ class TectronixTDS:
         self.ip = '192.168.1.222'
         if ip is not None:
             self.ip = ip
+        self.port = port
         self.timeout = timeout
         self.retries = 2
         self.response = ''
         self.connected = False
         self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
         self.connection = None
-        # self.connection = tec_connect(self.ip, 2.0)
-        # self.connected = True
         self.plots = {}
         self.tec_type = ''
         self.last_aq = ''
         self.connect(timeout=timeout)
-        # self.send_command('HEADer 0')
         self.set_config()
         if self.connected:
             self.logger.debug('%s at %s has been initialized (last_aq=%s) in %6.3f s',
@@ -217,7 +215,6 @@ class TectronixTDS:
     def connect(self, timeout=None):
         if timeout is None:
             timeout = self.timeout
-        self.timeout = timeout
         try:
             with self.lock:
                 self.connection = tec_connect(self.ip, timeout=timeout)

@@ -1015,6 +1015,12 @@
             <property name="editable">
              <bool>true</bool>
             </property>
+            <property name="maxCount">
+             <number>10</number>
+            </property>
+            <property name="minimumContentsLength">
+             <number>5</number>
+            </property>
             <item>
              <property name="text">
               <string>Signal</string>
@@ -1032,7 +1038,7 @@
             </item>
             <item>
              <property name="text">
-              <string/>
+              <string>(x,y)</string>
              </property>
             </item>
            </widget>
@@ -1355,7 +1361,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>23</height>
+     <height>34</height>
     </rect>
    </property>
    <property name="font">
