@@ -45,6 +45,18 @@ def tec_read_response_data(response):
     return data
 
 
+class connection_port:
+    def __int__(self, ip, port):
+        self.ip = ip
+        self.port = port
+
+    def request(self, action, url, params, headers):
+        pass
+
+    def getresponse(self):
+        pass
+
+
 def tec_send_command(connection, cmd, raw_response=False):
     params = ('COMMAND=' + cmd + '\n\rgpibsend=Send\n\rname=\n\r').encode()
     headers = {"Content-type": "text/plain",
