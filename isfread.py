@@ -46,7 +46,7 @@ def isfread(filename):
         fid = open(filename, 'rb')
     else:
         fid = filename
-    hdata = fid.read(511);  # read first 511 bytes
+    hdata = fid.read(511)  # read first 511 bytes
     head = {'bytenum': getnum(hdata, b'BYT_NR'),
             'bitnum': getnum(hdata, b'BIT_NR'),
             'encoding': getstr(hdata, b'ENCDG'),

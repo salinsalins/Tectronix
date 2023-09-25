@@ -15,6 +15,8 @@ from PIL import Image
 import sys
 import time
 
+import Moxa
+
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 from log_exception import log_exception
@@ -36,6 +38,7 @@ def tec_request(connection, method, url, params, headers):
 
 
 def tec_read_response_data(response):
+    time.sleep(0.05)
     data = b''
     while True:
         d = response.read(1024)
@@ -43,18 +46,6 @@ def tec_read_response_data(response):
             break
         data += d
     return data
-
-
-class connection_port:
-    def __int__(self, ip, port):
-        self.ip = ip
-        self.port = port
-
-    def request(self, action, url, params, headers):
-        pass
-
-    def getresponse(self):
-        pass
 
 
 def tec_send_command(connection, cmd, raw_response=False):
@@ -117,6 +108,63 @@ def tec_get_trace(connection, chan_number):
     isf = tec_get_isf(connection, chan_number)
     x, y, h = isfread(io.BytesIO(isf))
     return x, y, h, isf
+
+
+class Response:
+    def __init__(self, c):
+        self.conn = c
+        self.status = 200
+        self.m1 = 0
+
+    def read(self, n):
+        m2 = self.m1 + n
+        dl = len(self.conn.data)
+        m2 = min(m2, dl - 1)
+        data = self.conn.data[self.m1:m2]
+        self.m1 = m2
+        return data
+
+
+class connection_port:
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+        self.moxa = Moxa.MoxaTCPComPort(ip, port)
+        self.req_params = None
+        self.req_type = None
+        self.data = b''
+
+    def request(self, action, url, params, headers):
+        self.req_params = (action, url, params, headers)
+        cmd = ''
+        if 'Comm.html' in url:
+            self.req_type = 1
+            cmd = params.split(b'\n')[0].replace(b'COMMAND=', b'') + b'\r\n'
+        elif 'Image.png' in url:
+            self.req_type = 2
+            self.data = b''
+        elif 'getwfm.isf' in url:
+            self.req_type = 2
+            cmd = params.replace(b'command=', b'').replace(b'\r\n', b';').replace(b'wfmsend=Get;', b'')
+            cmd += b'curve?\r\n'
+            cmd = cmd.replace(b';', b';:')
+        try:
+            n = self.moxa.write(cmd)
+            print(cmd, len(cmd), n)
+            if n != len(cmd):
+                self.data = b''
+            else:
+                self.data = tec_read_response_data(self.moxa)
+        except KeyboardInterrupt:
+            raise
+        except:
+            self.data = b''
+        if self.data and self.req_type == 1:
+            self.data = b'<TEXTAREA>' + self.data + b'</TEXTAREA>'
+        print("data:", self.data)
+
+    def getresponse(self):
+        return Response(self)
 
 
 class TectronixTDS:

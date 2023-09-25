@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1481,
-            892
+            1093,
+            750
         ],
         "position": [
-            2371,
-            27
+            2374,
+            120
         ]
     },
     "log_level": 10,
@@ -18,5 +18,14 @@
     },
     "lineEdit_2": "CH1:SCA 5.0E0",
     "checkBox": true,
-    "ip": "192.168.1.222"
+    "ip": "192.168.1.222",
+    "comboBox": {
+        "items": [
+            "Signal",
+            "FFT",
+            "Pressure",
+            "(x,y)"
+        ],
+        "index": 0
+    }
 }

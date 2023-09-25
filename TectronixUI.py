@@ -74,8 +74,8 @@ class MainWindow(QMainWindow):
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
         restore_settings(self, file_name=CONFIG_FILE,
                          widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
-        if self.comboBox.findText(self.folder) < 0:
-            pass
+        # if self.comboBox.findText(self.folder) < 0:
+        #     pass
         self.folder = self.config.get('folder', 'D:/tec_data')
         if self.comboBox_2.findText(self.folder) < 0:
             self.comboBox_2.insertItem(0, self.folder)
