@@ -78,17 +78,17 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     try:
         connection.reset_input_buffer()
         connection.reset_output_buffer()
-        connection.write(cmd)
+        n = connection.write(cmd)
     except KeyboardInterrupt:
         raise
     except:
-        log_exception(config_logger())
+        # log_exception(config_logger())
         return ''
     data = tec_read_response_data(connection)
     if raw_response:
         return data[:-1]
     try:
-        return data[:-1].decode()
+        return data[:-1].decode('ascii')
     except KeyboardInterrupt:
         raise
     except:
@@ -113,25 +113,19 @@ def tec_send_command_html(connection, cmd, raw_response=False):
         if raw_response:
             return None, response.status, None
         return None
-    data = tec_read_response_data(response).decode()
+    raw = tec_read_response_data(response)
+    out = None
+    data = raw.decode()
     n = data.find('<TEXTAREA')
-    if n < 0:
-        if raw_response:
-            return None, response.status, data
-        return None
-    n1 = data[n:].find('>')
-    if n1 < 0:
-        if raw_response:
-            return None, response.status, data
-        return None
-    m = data.find('</TEXTAREA')
-    if m < 0:
-        if raw_response:
-            return None, response.status, data
-        return None
+    if n >= 0:
+        n1 = data[n:].find('>')
+        if n1 >= 0:
+            n2 = data.find('</TEXTAREA')
+            if n2 >= n+n1+1:
+                out = data[n+n1+1:n2].strip()
     if raw_response:
-        return data[n + n1 + 1:m].strip(), response.status, data
-    return data[n + n1 + 1:m].strip()
+        return out, response.status, raw
+    return out
 
 
 def tec_get_image_data_port(connection):
@@ -153,7 +147,7 @@ def tec_get_image(connection):
 
 
 def tec_get_isf_port(connection, chan_number):
-    tec_send_command_port(connection, '')
+    tec_send_command_port(connection, 'HEADER 1')
     tec_send_command_port(connection, '')
     data = tec_send_command_port(connection, '')
     return data
