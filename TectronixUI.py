@@ -120,8 +120,8 @@ class MainWindow(QMainWindow):
         #
         reconnect_timeout = self.config.get('reconnect_timeout', 0.0)
         TectronixTDS.RECONNECT_TIMEOUT = reconnect_timeout
-        timeout = self.config.get('timeout', 1.0)
-        port = self.config.get('port', '')
+        timeout = self.config.get('timeout', 0.01)
+        port = self.config.get('port', None)
         self.device = TectronixTDS(ip=ip, config=config, port=port, timeout=timeout)
         #
         if self.device.connected:

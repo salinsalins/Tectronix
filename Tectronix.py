@@ -132,12 +132,19 @@ def tec_get_image_data_port(connection):
     return b''
 
 
-def tec_get_image_data(connection):
+def tec_get_image_data_html(connection):
     params = b''
     headers = {"Accept": "image/avif,image/webp,*/*"}
     connection.request("GET", "/Image.png", params, headers)
     response = connection.getresponse()
     return tec_read_response_data(response)
+
+
+def tec_get_image_data(connection):
+    if isinstance(connection, http.client.HTTPConnection):
+        return tec_get_image_data_html(connection)
+    else:
+        return tec_get_image_data_port(connection)
 
 
 def tec_get_image(connection):
@@ -147,13 +154,20 @@ def tec_get_image(connection):
 
 
 def tec_get_isf_port(connection, chan_number):
+    tec_send_command_port(connection, 'DATa:SOUrce CH%s'%chan_number)
     tec_send_command_port(connection, 'HEADER 1')
-    tec_send_command_port(connection, '')
-    data = tec_send_command_port(connection, '')
+    data = tec_send_command_port(connection, 'WAVFrm?', raw_response=True)
     return data
 
 
 def tec_get_isf(connection, chan_number):
+    if isinstance(connection, http.client.HTTPConnection):
+        return tec_get_isf_html(connection, chan_number)
+    else:
+        return tec_get_isf_port(connection, chan_number)
+
+
+def tec_get_isf_html(connection, chan_number):
     s = 'command=select:ch%s on\r\ncommand=save:waveform:fileformat internal\r\nwfmsend=Get\r\n' % chan_number
     params = s.encode()
     headers = {"Accept": "text/html, application/xhtml+xml, image/jxr, */*",
@@ -168,63 +182,6 @@ def tec_get_trace(connection, chan_number):
     isf = tec_get_isf(connection, chan_number)
     x, y, h = isfread(io.BytesIO(isf))
     return x, y, h, isf
-
-
-class Response:
-    def __init__(self, c):
-        self.conn = c
-        self.status = 200
-        self.m1 = 0
-
-    def read(self, n):
-        m2 = self.m1 + n
-        dl = len(self.conn.data)
-        m2 = min(m2, dl - 1)
-        data = self.conn.data[self.m1:m2]
-        self.m1 = m2
-        return data
-
-
-class connection_port:
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-        self.moxa = Moxa.MoxaTCPComPort(ip, port)
-        self.req_params = None
-        self.req_type = None
-        self.data = b''
-
-    def request(self, action, url, params, headers):
-        self.req_params = (action, url, params, headers)
-        cmd = ''
-        if 'Comm.html' in url:
-            self.req_type = 1
-            cmd = params.split(b'\n')[0].replace(b'COMMAND=', b'') + b'\r\n'
-        elif 'Image.png' in url:
-            self.req_type = 2
-            self.data = b''
-        elif 'getwfm.isf' in url:
-            self.req_type = 2
-            cmd = params.replace(b'command=', b'').replace(b'\r\n', b';').replace(b'wfmsend=Get;', b'')
-            cmd += b'curve?\r\n'
-            cmd = cmd.replace(b';', b';:')
-        try:
-            n = self.moxa.write(cmd)
-            print(cmd, len(cmd), n)
-            if n != len(cmd):
-                self.data = b''
-            else:
-                self.data = tec_read_response_data(self.moxa)
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.data = b''
-        if self.data and self.req_type == 1:
-            self.data = b'<TEXTAREA>' + self.data + b'</TEXTAREA>'
-        print("data:", self.data)
-
-    def getresponse(self):
-        return Response(self)
 
 
 class TectronixTDS:
@@ -337,7 +294,7 @@ class TectronixTDS:
             timeout = self.timeout
         try:
             with self.lock:
-                self.connection = tec_connect(self.ip, timeout=timeout)
+                self.connection = tec_connect(self.ip, timeout=timeout, port=self.port)
             self.connected = True
             self.logger.debug('Connected')
         except KeyboardInterrupt:
