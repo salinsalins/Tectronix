@@ -8,24 +8,33 @@ s='s=%r;print(s%%s)';print(s%s)
 """
 import http.client
 import io
+import os
 import socket
-import threading
-
-from PIL import Image
 import sys
+import threading
 import time
 
+from PIL import Image
 import Moxa
 
-if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+u = os.path.dirname(os.path.realpath(sys.argv[0]))
+util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
+if util_path not in sys.path:
+    sys.path.append(util_path)
 
 from log_exception import log_exception
 from config_logger import config_logger
 from isfread import isfread
 
 
-def tec_connect(ip, timeout=None):
-    connection = http.client.HTTPConnection(ip, timeout=timeout)
+def tec_connect(ip, timeout=None, port=None):
+    if port is None:
+        connection = http.client.HTTPConnection(ip, timeout=timeout)
+    else:
+        if timeout is None:
+            connection = Moxa.MoxaTCPComPort(ip, port)
+        else:
+            connection = Moxa.MoxaTCPComPort(ip, port, timeout=timeout)
     return connection
 
 
@@ -38,17 +47,63 @@ def tec_request(connection, method, url, params, headers):
 
 
 def tec_read_response_data(response):
-    time.sleep(0.05)
-    data = b''
-    while True:
+    try:
         d = response.read(1024)
-        if not d:
+    except KeyboardInterrupt:
+        raise
+    except:
+        log_exception(config_logger())
+        d = b''
+    if not d:
+        time.sleep(0.05)
+    data = d
+    while True:
+        try:
+            d = response.read(1024)
+            if not d:
+                break
+            data += d
+        except KeyboardInterrupt:
+            raise
+        except:
             break
-        data += d
     return data
 
 
+def tec_send_command_port(connection, cmd, raw_response=False):
+    if not isinstance(cmd, bytes):
+        cmd = str(cmd).encode()
+    if not cmd.endswith(b'\r\n'):
+        cmd += b'\r\n'
+    try:
+        connection.reset_input_buffer()
+        connection.reset_output_buffer()
+        connection.write(cmd)
+    except KeyboardInterrupt:
+        raise
+    except:
+        log_exception(config_logger())
+        return ''
+    data = tec_read_response_data(connection)
+    if raw_response:
+        return data[:-1]
+    try:
+        return data[:-1].decode()
+    except KeyboardInterrupt:
+        raise
+    except:
+        pass
+    return ''
+
+
 def tec_send_command(connection, cmd, raw_response=False):
+    if isinstance(connection, http.client.HTTPConnection):
+        return tec_send_command_html(connection, cmd, raw_response)
+    else:
+        return tec_send_command_port(connection, cmd, raw_response)
+
+
+def tec_send_command_html(connection, cmd, raw_response=False):
     params = ('COMMAND=' + cmd + '\n\rgpibsend=Send\n\rname=\n\r').encode()
     headers = {"Content-type": "text/plain",
                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"}
@@ -79,6 +134,10 @@ def tec_send_command(connection, cmd, raw_response=False):
     return data[n + n1 + 1:m].strip()
 
 
+def tec_get_image_data_port(connection):
+    return b''
+
+
 def tec_get_image_data(connection):
     params = b''
     headers = {"Accept": "image/avif,image/webp,*/*"}
@@ -91,6 +150,13 @@ def tec_get_image(connection):
     data = tec_get_image_data(connection)
     img = Image.open(io.BytesIO(data))
     return img
+
+
+def tec_get_isf_port(connection, chan_number):
+    tec_send_command_port(connection, '')
+    tec_send_command_port(connection, '')
+    data = tec_send_command_port(connection, '')
+    return data
 
 
 def tec_get_isf(connection, chan_number):
@@ -506,59 +572,90 @@ class TectronixTDS:
         v = self.send_command('CH%s:OFFSet %s' % (n, offset))
         return v is not None
 
-# tec_ip = "192.168.1.222"
 
-# conn = http.client.HTTPConnection(tec_ip)
-# conn.request("GET", "/")
-# r1 = conn.getresponse()
-# print(r1.status, r1.reason)
-# params = urllib.parse.urlencode({'COMMAND': '*idn?', '@gpibsend': 'Send', '@name': ''})
+def send_and_print(conn, cmd, **kwargs):
+    t0 = time.time()
+    result = tec_send_command(conn, cmd, **kwargs)
+    pr = result[:128]
+    if len(result) > 127:
+        if isinstance(pr, str):
+            pr += ' ... '
+        else:
+            pr += b' ... '
+    if isinstance(pr, str):
+        pr = '"' + pr + '"'
+    print('%12s'%cmd, ' ->', 'len=%s' % len(result), '%6.3f s' % (time.time()-t0), pr)
+    return result
 
-# command = '*idn?'       # read device id
-# command = 'CH1:COUP DC' # set channel 1 coupling to DC (AC, GND)
-# command = 'CH1:IMP MEG' # set channel 1 impedance to 1MOhm (FIF)
-# command = 'CH1:VOL 1.0' # set channel 1 voltage rang 1 V/dib (real)
-# command = 'CH1:POS 2.0' # set channel 1 position +2 divisions (real)
-# command = 'HOR:SCAL 0.1'  # sampling 0.1 s/div
-# command = 'HOR:TRIG:POS 50.0'  # horiz. trigger position 50% of screen
-# command = 'ID?'  # similar to *idn?
-# command = '*LRN?'  # read all settings
-# command = 'TRIG?'  # query trigger params
-# command = 'TRIG FORC'  # force trigger
-# command = 'TRIG:STATE?'  # trigger state
+if __name__ == '__main__':
+    tec_ip = "192.168.1.223"
+    # conn = http.client.HTTPConnection(tec_ip)
+    conn = tec_connect(tec_ip, port=4000, timeout=0.005)
+
+    send_and_print(conn, '*idn?')
+    send_and_print(conn, 'DATa:SOUrce?')
+    send_and_print(conn, 'DATa:ENCdg?')
+    send_and_print(conn, 'DATa:WIDth?')
+    send_and_print(conn, 'DATa:STARt?')
+    send_and_print(conn, 'DATa:STOP?')
+    # send_and_print(conn, 'DATa:STOP 10000')
+    send_and_print(conn, 'HEAD 1')
+    send_and_print(conn, 'WFMPre?')
+    # send_and_print(conn, 'CURVe?', raw_response=True)
+    send_and_print(conn, 'BUSY?')
+    # send_and_print(conn, 'WAVFrm?', raw_response=True)
+    conn.close()
+
+    # conn.request("GET", "/")
+    # r1 = conn.getresponse()
+    # print(r1.status, r1.reason)
+    # params = urllib.parse.urlencode({'COMMAND': '*idn?', '@gpibsend': 'Send', '@name': ''})
+
+    # command = '*idn?'       # read device id
+    # command = 'CH1:COUP DC' # set channel 1 coupling to DC (AC, GND)
+    # command = 'CH1:IMP MEG' # set channel 1 impedance to 1MOhm (FIF)
+    # command = 'CH1:VOL 1.0' # set channel 1 voltage rang 1 V/dib (real)
+    # command = 'CH1:POS 2.0' # set channel 1 position +2 divisions (real)
+    # command = 'HOR:SCAL 0.1'  # sampling 0.1 s/div
+    # command = 'HOR:TRIG:POS 50.0'  # horiz. trigger position 50% of screen
+    # command = 'ID?'  # similar to *idn?
+    # command = '*LRN?'  # read all settings
+    # command = 'TRIG?'  # query trigger params
+    # command = 'TRIG FORC'  # force trigger
+    # command = 'TRIG:STATE?'  # trigger state
 
 
-# print('Connecting')
-# t0 = time.time()
-# conn = tec_connect(tec_ip)
-# print('Elapsed', time.time() - t0, 's')
-#
-# print('Sending command')
-# t0 = time.time()
-# result = tec_send_command(conn, 'TRIG:STATE?')
-# print('Elapsed', time.time() - t0, 's')
-# print(result)
-#
-# print('Reading image')
-# t0 = time.time()
-# result = tec_get_image(conn)
-# print('Elapsed', time.time() - t0, 's')
-#
-# import matplotlib.pyplot as plt
-#
-# imgplot = plt.imshow(result)
-# plt.show()
-#
-# print('Reading data')
-# t0 = time.time()
-# x, y, head = tec_get_data(conn, 2)
-# print('Elapsed', time.time() - t0, 's')
-# print(head)
-# plt.plot(x, y)
-# plt.xlabel('Time, s')
-# plt.ylabel('Signal, V')
-# plt.show()
-#
-# conn.close()
-#
-# print('Finished')
+    # print('Connecting')
+    # t0 = time.time()
+    # conn = tec_connect(tec_ip)
+    # print('Elapsed', time.time() - t0, 's')
+    #
+    # print('Sending command')
+    # t0 = time.time()
+    # result = tec_send_command(conn, 'TRIG:STATE?')
+    # print('Elapsed', time.time() - t0, 's')
+    # print(result)
+    #
+    # print('Reading image')
+    # t0 = time.time()
+    # result = tec_get_image(conn)
+    # print('Elapsed', time.time() - t0, 's')
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # imgplot = plt.imshow(result)
+    # plt.show()
+    #
+    # print('Reading data')
+    # t0 = time.time()
+    # x, y, head = tec_get_data(conn, 2)
+    # print('Elapsed', time.time() - t0, 's')
+    # print(head)
+    # plt.plot(x, y)
+    # plt.xlabel('Time, s')
+    # plt.ylabel('Signal, V')
+    # plt.show()
+    #
+    # conn.close()
+    #
+    # print('Finished')

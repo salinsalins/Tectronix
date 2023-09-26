@@ -2,11 +2,11 @@
     "main_window": {
         "size": [
             1093,
-            750
+            849
         ],
         "position": [
-            2374,
-            120
+            2049,
+            -23
         ]
     },
     "log_level": 10,
@@ -16,7 +16,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "CH1:SCA 5.0E0",
+    "lineEdit_2": "header 0;:wfmpre?",
     "checkBox": true,
     "ip": "192.168.1.222",
     "comboBox": {
