@@ -67,6 +67,7 @@ def tec_read_response_data(response):
         except:
             break
     if not data.endswith(b'\n'):
+        # tec_send_command('*cls')
         print('?', data[:10])
     return data
 
@@ -196,7 +197,7 @@ def tec_get_trace(connection, chan_number):
 class TectronixTDS:
     RECONNECT_TIMEOUT = 5.0
     default = {
-        'VERBose': '0',  # 1 | 0 | ON | OFF
+        'VERBose': '1',  # 1 | 0 | ON | OFF
         'HEADer': '0',  # 1 | 0 | ON | OFF
         # '*LRN?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
@@ -569,6 +570,7 @@ if __name__ == '__main__':
     conn = tec_connect(tec_ip, port=4000, timeout=0.1)
 
     send_and_print(conn, '*idn?')
+    send_and_print(conn, 'ALLEv?')
     send_and_print(conn, 'DATa:SOUrce?')
     send_and_print(conn, 'DATa:ENCdg?')
     send_and_print(conn, 'DATa:WIDth?')
