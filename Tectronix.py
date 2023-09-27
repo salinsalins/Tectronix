@@ -100,7 +100,16 @@ def tec_send_command(connection, cmd, raw_response=False):
     if isinstance(connection, http.client.HTTPConnection):
         return tec_send_command_html(connection, cmd, raw_response)
     else:
-        return tec_send_command_port(connection, cmd, raw_response)
+        raw = tec_send_command_port(connection, cmd, raw_response)
+        if not raw_response:
+            return raw
+        try:
+            resp = raw.decode('ascii')
+        except AttributeError:
+            resp = raw
+        except UnicodeDecodeError:
+            resp = str(raw[:128])
+        return resp, 200, raw
 
 
 def tec_send_command_html(connection, cmd, raw_response=False):
@@ -321,13 +330,22 @@ class TectronixTDS:
     def strip_header(self, result):
         if result is None:
             return None
-        if not result.startswith(':'):
-            return result
-        rs = result.split(';')
-        ri = []
-        for r in rs:
-            ri.append(r.split(" ")[1])
-        ro = ';'.join(ri)
+        if isinstance(result, bytes):
+            if not result.startswith(b':'):
+                return result
+            rs = result.split(b';')
+            ri = []
+            for r in rs:
+                ri.append(r.split(b' ')[1])
+            ro = b';'.join(ri)
+        else:
+            if not result.startswith(':'):
+                return result
+            rs = result.split(';')
+            ri = []
+            for r in rs:
+                ri.append(r.split(' ')[1])
+            ro = ';'.join(ri)
         return ro
 
     def _send_command(self, cmd):

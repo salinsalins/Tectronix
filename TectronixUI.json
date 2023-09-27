@@ -5,8 +5,8 @@
             849
         ],
         "position": [
-            2049,
-            -23
+            2053,
+            101
         ]
     },
     "log_level": 10,
@@ -18,7 +18,9 @@
     },
     "lineEdit_2": "header 0;:wfmpre?",
     "checkBox": true,
-    "ip": "192.168.1.222",
+    "ip": "192.168.1.223",
+    "port": 4000,
+    "timeout": 0.01,
     "comboBox": {
         "items": [
             "Signal",

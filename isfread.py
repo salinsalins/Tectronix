@@ -91,7 +91,7 @@ def isfread(filename):
                 except ValueError:
                     v = tags[t]
             tags[t] = v
-        print(tags)
+        # print(tags)
         head = {'bytenum': getnum(hdata, b'BYT_NR'),
                 'bitnum': getnum(hdata, b'BIT_NR'),
                 'encoding': getstr(hdata, b'ENCDG'),
