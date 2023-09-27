@@ -52,7 +52,6 @@ def tec_read_response_data(response):
     except KeyboardInterrupt:
         raise
     except:
-        print('!!!')
         d = b''
     if not d:
         time.sleep(0.1)
@@ -66,8 +65,9 @@ def tec_read_response_data(response):
         except KeyboardInterrupt:
             raise
         except:
-            print('!!!')
             break
+    if not data.endswith(b'\n'):
+        print('?', data[:10])
     return data
 
 
