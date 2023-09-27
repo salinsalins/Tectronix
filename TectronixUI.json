@@ -20,7 +20,7 @@
     "checkBox": true,
     "ip": "192.168.1.223",
     "port": 4000,
-    "timeout": 1.0,
+    "timeout": 0.1,
     "comboBox": {
         "items": [
             "Signal",
