@@ -76,14 +76,16 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     if not cmd.endswith(b'\r\n'):
         cmd += b'\r\n'
     try:
-        connection.reset_input_buffer()
-        connection.reset_output_buffer()
+        # connection.reset_input_buffer()
+        # connection.reset_output_buffer()
         n = connection.write(cmd)
     except KeyboardInterrupt:
         raise
     except:
+        print('!')
         # log_exception(config_logger())
         return ''
+    # time.sleep(0.1)
     data = tec_read_response_data(connection)
     if raw_response:
         return data[:-1]
@@ -92,6 +94,8 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     except KeyboardInterrupt:
         raise
     except:
+        print('!!')
+        # log_exception(config_logger())
         pass
     return ''
 
@@ -544,8 +548,13 @@ class TectronixTDS:
 
 def send_and_print(conn, cmd, **kwargs):
     t0 = time.time()
-    result = tec_send_command(conn, cmd, **kwargs)
-    pr = result[:128]
+    raw_result = tec_send_command(conn, cmd, **kwargs)
+    raw = kwargs.get('raw_response', False)
+    if raw:
+        result = raw_result[0]
+    else:
+        result = raw_result
+    pr = result[:512]
     if len(result) > 127:
         if isinstance(pr, str):
             pr += ' ... '
@@ -553,13 +562,13 @@ def send_and_print(conn, cmd, **kwargs):
             pr += b' ... '
     if isinstance(pr, str):
         pr = '"' + pr + '"'
-    print('%12s'%cmd, ' ->', 'len=%s' % len(result), '%6.3f s' % (time.time()-t0), pr)
+    print('%12s'%cmd, ' ->', 'len=%s' % len(raw_result), '%6.3f s' % (time.time()-t0), pr)
     return result
 
 if __name__ == '__main__':
     tec_ip = "192.168.1.223"
     # conn = http.client.HTTPConnection(tec_ip)
-    conn = tec_connect(tec_ip, port=4000, timeout=0.005)
+    conn = tec_connect(tec_ip, port=4000, timeout=0.01)
 
     send_and_print(conn, '*idn?')
     send_and_print(conn, 'DATa:SOUrce?')
@@ -567,12 +576,20 @@ if __name__ == '__main__':
     send_and_print(conn, 'DATa:WIDth?')
     send_and_print(conn, 'DATa:STARt?')
     send_and_print(conn, 'DATa:STOP?')
-    # send_and_print(conn, 'DATa:STOP 10000')
-    send_and_print(conn, 'HEAD 1')
-    send_and_print(conn, 'WFMPre?')
+    send_and_print(conn, 'DATa:STOP 10000')
+    send_and_print(conn, 'DATa:STOP?')
+    # send_and_print(conn, 'HEAD 1')
+    # send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'CURVe?', raw_response=True)
     send_and_print(conn, 'BUSY?')
+    send_and_print(conn, 'DATa:SOUrce CH%s'%1)
+    send_and_print(conn, 'HEADER 1')
+    send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'WAVFrm?', raw_response=True)
+    # data = tec_send_command_port(conn, 'WAVFrm?', raw_response=True)
+    # print(data)
+    # data = tec_get_isf_port(conn, 1)
+    # print(data)
     conn.close()
 
     # conn.request("GET", "/")
