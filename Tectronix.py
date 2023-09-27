@@ -52,10 +52,10 @@ def tec_read_response_data(response):
     except KeyboardInterrupt:
         raise
     except:
-        log_exception(config_logger())
+        print('!!!')
         d = b''
     if not d:
-        time.sleep(0.05)
+        time.sleep(0.1)
     data = d
     while True:
         try:
@@ -66,6 +66,7 @@ def tec_read_response_data(response):
         except KeyboardInterrupt:
             raise
         except:
+            print('!!!')
             break
     return data
 
@@ -73,8 +74,8 @@ def tec_read_response_data(response):
 def tec_send_command_port(connection, cmd, raw_response=False):
     if not isinstance(cmd, bytes):
         cmd = str(cmd).encode()
-    if not cmd.endswith(b'\r\n'):
-        cmd += b'\r\n'
+    if not cmd.endswith(b'\n'):
+        cmd += b'\n'
     try:
         # connection.reset_input_buffer()
         # connection.reset_output_buffer()
@@ -568,7 +569,7 @@ def send_and_print(conn, cmd, **kwargs):
 if __name__ == '__main__':
     tec_ip = "192.168.1.223"
     # conn = http.client.HTTPConnection(tec_ip)
-    conn = tec_connect(tec_ip, port=4000, timeout=0.01)
+    conn = tec_connect(tec_ip, port=4000, timeout=0.1)
 
     send_and_print(conn, '*idn?')
     send_and_print(conn, 'DATa:SOUrce?')
@@ -583,8 +584,10 @@ if __name__ == '__main__':
     # send_and_print(conn, 'CURVe?', raw_response=True)
     send_and_print(conn, 'BUSY?')
     send_and_print(conn, 'DATa:SOUrce CH%s'%1)
-    send_and_print(conn, 'HEADER 1')
-    send_and_print(conn, 'WFMPre?')
+    send_and_print(conn, 'DATa:SOUrce?')
+    send_and_print(conn, 'HEAD 1')
+    send_and_print(conn, 'HEAD?')
+    # send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'WAVFrm?', raw_response=True)
     # data = tec_send_command_port(conn, 'WAVFrm?', raw_response=True)
     # print(data)
