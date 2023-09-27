@@ -20,8 +20,20 @@ def isfread(filename):
     """
 
     # Subroutines used to extract information from the head --------------------
+    def get_tag(tags, tag):
+        if isinstance(tag, bytes):
+            tag = tag.decode('ascii')
+        lta = len(tag)
+        for t in tags:
+            lt = min(len(t), lta)
+            if t[:lt].upper() == tag[:lt].upper():
+                return tags[t]
+        raise ValueError('Tag %s not found in *.isf file' % tag)
+
+
     def getnum(string, tag):
         """ Look into the string for the tag and extract the consequent number"""
+        return get_tag(tags, tag)
         n1 = string.find(tag)
         if n1 < 0:
             raise ValueError('Wrong format of *.isf file.')
@@ -37,6 +49,7 @@ def isfread(filename):
 
     def getstr(string, tag):
         """ Look into the string for the tag and extract the consequent string"""
+        return get_tag(tags, tag)
         n1 = string.find(tag)
         if n1 < 0:
             raise ValueError('Wrong format of *.isf file.')
@@ -48,6 +61,7 @@ def isfread(filename):
     def getquotedstr(string, tag):
         """ Look into the string for the tag and extract the consequent quoted
         string"""
+        return get_tag(tags, tag)
         n1 = string.find(tag)
         if n1 < 0:
             raise ValueError('Wrong format of *.isf file.')
@@ -68,7 +82,7 @@ def isfread(filename):
         tags = {}
         if hdata.startswith(b':WFM'):
             n = hdata[3:].find(b':')
-            hds = hdata[n + 1:].split(b';')
+            hds = hdata[n + 4:].split(b';')
             for h in hds[:-1]:
                 if b'#' in h:
                     break
@@ -110,8 +124,10 @@ def isfread(filename):
                 'npts': getnum(hdata, b'NR_PT')}
 
         # The only cases that this code (at this moment) not take into account.
-        if ((head['bytenum'] != 2) or (head['bitnum'] != 16) or
-                (head['encoding'] != 'BIN') or (head['binformat'] != 'RI') or
+        if ((head['bytenum'] not in [1, 2]) or
+                (head['bitnum'] not in [8, 16]) or
+                (not head['encoding'].startswith('BIN')) or
+                (head['binformat'] != 'RI') or
                 (head['pointformat'] != 'Y')):
             # fid.close()
             raise ValueError('Wrong format of *.isf file.')
@@ -126,11 +142,13 @@ def isfread(filename):
 
         # Skipping the #<x><yy...y> part of the <Block> bytes
         ii = hdata.find(b':CURVE #')
+        n = 8
         if ii < 0:
             ii = hdata.find(b'#')
+            n = 1
             if ii < 0:
                 raise ValueError('Wrong format of *.isf file.')
-        fid.seek(ii + 8)
+        fid.seek(ii + n)
         skip = int(fid.read(1))
         n1 = int(fid.read(skip))
 
@@ -143,11 +161,14 @@ def isfread(filename):
         ptoff = head['ptoff']
         yoff = head['yoff']
 
-        dict_endian = {  # Dictionary to converts significant bit infor-
+        dict_endian = {  # Dictionary to converts significant bit info
             'MSB': '>',  # mation to struct module definitions.
             'LSB': '<'
         }
-        fmt = dict_endian[head['byteorder']] + str(npts) + 'h'
+        if head['bytenum'] == 2:
+            fmt = dict_endian[head['byteorder']] + str(npts) + 'h'
+        else:
+            fmt = str(npts) + 'b'
         n2 = struct.calcsize(fmt)
 
         # n1 is the number of bytes to be red directly from Tek-ISF-file.

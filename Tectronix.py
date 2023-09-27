@@ -79,11 +79,11 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     try:
         # connection.reset_input_buffer()
         # connection.reset_output_buffer()
-        n = connection.write(cmd)
+        connection.write(cmd)
     except KeyboardInterrupt:
         raise
     except:
-        print('!')
+        # print('!')
         # log_exception(config_logger())
         return ''
     # time.sleep(0.1)
@@ -91,11 +91,11 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     if raw_response:
         return data[:-1]
     try:
-        return data[:-1].decode('ascii')
+        return data[:-1].decode('ascii', errors='replace')
     except KeyboardInterrupt:
         raise
     except:
-        print('!!')
+        # print('!!')
         # log_exception(config_logger())
         pass
     return ''
@@ -108,12 +108,7 @@ def tec_send_command(connection, cmd, raw_response=False):
         raw = tec_send_command_port(connection, cmd, raw_response)
         if not raw_response:
             return raw
-        try:
-            resp = raw.decode('ascii')
-        except AttributeError:
-            resp = raw
-        except UnicodeDecodeError:
-            resp = str(raw[:128])
+        resp = raw.decode('ascii', errors='replace')
         return resp, 200, raw
 
 
@@ -553,9 +548,11 @@ def send_and_print(conn, cmd, **kwargs):
     raw = kwargs.get('raw_response', False)
     if raw:
         result = raw_result[0]
+        m = len(raw_result[-1])
     else:
         result = raw_result
-    pr = result[:512]
+        m = len(raw_result)
+    pr = result[:128]
     if len(result) > 127:
         if isinstance(pr, str):
             pr += ' ... '
@@ -563,7 +560,7 @@ def send_and_print(conn, cmd, **kwargs):
             pr += b' ... '
     if isinstance(pr, str):
         pr = '"' + pr + '"'
-    print('%12s'%cmd, ' ->', 'len=%s' % len(raw_result), '%6.3f s' % (time.time()-t0), pr)
+    print('%12s'%cmd, ' ->', 'len=%s' % m, '%6.3f s' % (time.time()-t0), pr)
     return result
 
 if __name__ == '__main__':
@@ -587,12 +584,14 @@ if __name__ == '__main__':
     send_and_print(conn, 'DATa:SOUrce?')
     send_and_print(conn, 'HEAD 1')
     send_and_print(conn, 'HEAD?')
-    # send_and_print(conn, 'WFMPre?')
+    send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'WAVFrm?', raw_response=True)
     # data = tec_send_command_port(conn, 'WAVFrm?', raw_response=True)
     # print(data)
-    # data = tec_get_isf_port(conn, 1)
-    # print(data)
+    data = tec_get_trace(conn, 1)
+    print(data[-2])
+    print(data[0])
+    print(data[1])
     conn.close()
 
     # conn.request("GET", "/")

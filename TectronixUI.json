@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1093,
-            849
+            1496,
+            1269
         ],
         "position": [
-            2054,
-            146
+            2060,
+            416
         ]
     },
     "log_level": 10,
@@ -16,11 +16,9 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "header 0;:wfmpre?",
+    "lineEdit_2": "sel?",
     "checkBox": true,
-    "ip": "192.168.1.223",
-    "port": 4000,
-    "timeout": 0.1,
+    "ip": "192.168.1.222",
     "comboBox": {
         "items": [
             "Signal",

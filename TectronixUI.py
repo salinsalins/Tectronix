@@ -504,6 +504,7 @@ class MainWindow(QMainWindow):
         return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     def save_png(self, dts=None):
+        return
         data = self.device.get_image()
         if data is None:
             self.logger.info("Can not read image")
