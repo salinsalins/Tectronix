@@ -66,10 +66,47 @@ def tec_read_response_data(response):
             raise
         except:
             break
+    return data
+
+
+def tec_read_response_port(port):
+    n = 1024
+    try:
+        d = port.read(n)
+    except KeyboardInterrupt:
+        raise
+    except:
+        d = b''
+    if not d:
+        time.sleep(0.05)
+    else:
+        if len(d) < n:
+            if not d.endswith(b'\n'):
+                print('?', d[:10])
+            return d
+    data = d
+    while True:
+        try:
+            d = port.read(n, True)
+            data += d
+            if len(d) < n:
+                break
+        except KeyboardInterrupt:
+            raise
+        except:
+            break
+    i = data.rfind(b'#')
+    if i > 0:
+        n1 = int(data[i+1])
+        n2 = int(data[i+2:i+2+n1])
+        n3 = i + n1 + n2 + 1
+    else:
+        n3 = len(data)
+    if n3 > len(data) or data[n3-1] != b'\n':
+        print('?', data[:10])
     if not data.endswith(b'\n'):
         print('?', data[:10])
     return data
-
 
 def tec_send_command_port(connection, cmd, raw_response=False):
     if not isinstance(cmd, bytes):
@@ -87,7 +124,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
         # log_exception(config_logger())
         return ''
     # time.sleep(0.1)
-    data = tec_read_response_data(connection)
+    data = tec_read_response_port(connection)
     if raw_response:
         return data[:-1]
     try:
