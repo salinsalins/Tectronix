@@ -102,7 +102,7 @@ def tec_read_response_port(port):
         n3 = i + n1 + n2 + 1
     else:
         n3 = len(data)
-    if n3 > len(data) or data[n3-1] != b'\n':
+    if n3 > 0 and (n3 > len(data) or data[n3-1] != b'\n'):
         print('?', data[:10])
     if not data.endswith(b'\n'):
         print('?', data[:10])
