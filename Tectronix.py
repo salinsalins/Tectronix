@@ -91,6 +91,7 @@ def tec_read_response_port(port):
                 break
             data += d
             if len(d) < n and d.endswith(b'\n'):
+                print('1')
                 break
         except KeyboardInterrupt:
             raise
