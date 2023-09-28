@@ -126,8 +126,8 @@ def isfread(filename):
         # The only cases that this code (at this moment) not take into account.
         if ((head['bytenum'] not in [1, 2]) or
                 (head['bitnum'] not in [8, 16]) or
-                (not head['encoding'].startswith('BIN')) or
-                (head['binformat'] != 'RI') or
+                ('BIN' not in head['encoding']) or
+                ('RI' not in head['binformat']) or
                 (head['pointformat'] != 'Y')):
             # fid.close()
             raise ValueError('Wrong format of *.isf file.')

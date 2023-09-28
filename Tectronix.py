@@ -120,10 +120,12 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     except KeyboardInterrupt:
         raise
     except:
-        # print('!')
-        # log_exception(config_logger())
         return ''
     # time.sleep(0.1)
+    if b'?' not in cmd:
+        if raw_response:
+            return b''
+        return ''
     data = tec_read_response_port(connection)
     if raw_response:
         return data[:-1]
@@ -132,8 +134,6 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     except KeyboardInterrupt:
         raise
     except:
-        # print('!!')
-        # log_exception(config_logger())
         pass
     return ''
 
@@ -233,7 +233,7 @@ def tec_get_trace(connection, chan_number):
 class TectronixTDS:
     RECONNECT_TIMEOUT = 5.0
     default = {
-        'VERBose': '0',  # 1 | 0 | ON | OFF
+        'VERBose': '1',  # 1 | 0 | ON | OFF
         'HEADer': '0',  # 1 | 0 | ON | OFF
         # '*LRN?': '',
         'ACQuire:STATE': '0',  # 1 | 0 | RUN | STOP
@@ -606,6 +606,7 @@ if __name__ == '__main__':
     conn = tec_connect(tec_ip, port=4000, timeout=0.1)
 
     send_and_print(conn, '*idn?')
+    send_and_print(conn, 'ALLEv?')
     send_and_print(conn, 'DATa:SOUrce?')
     send_and_print(conn, 'DATa:ENCdg?')
     send_and_print(conn, 'DATa:WIDth?')
@@ -622,13 +623,16 @@ if __name__ == '__main__':
     send_and_print(conn, 'HEAD 1')
     send_and_print(conn, 'HEAD?')
     send_and_print(conn, 'WFMPre?')
+    send_and_print(conn, 'VERBOSE?')
+    send_and_print(conn, 'VERBOSE 1')
+    send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'WAVFrm?', raw_response=True)
     # data = tec_send_command_port(conn, 'WAVFrm?', raw_response=True)
     # print(data)
     data = tec_get_trace(conn, 1)
-    print(data[-2])
-    print(data[0])
-    print(data[1])
+    print('h:', data[-2])
+    print('x:', data[0])
+    print('y:', data[1])
     conn.close()
 
     # conn.request("GET", "/")
