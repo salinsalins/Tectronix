@@ -70,6 +70,7 @@ def tec_read_response_data(response):
 
 
 def tec_read_response_port(port):
+    m = 0
     n = 1024
     try:
         d = port.read(n)
@@ -77,35 +78,32 @@ def tec_read_response_port(port):
         raise
     except:
         d = b''
-    if not d:
-        time.sleep(0.05)
+    if d == b'':
+        time.sleep(0.1)
     else:
-        if len(d) < n:
-            if not d.endswith(b'\n'):
-                print('?', d[:10])
+        if len(d) < n and d.endswith(b'\n'):
             return d
     data = d
     while True:
         try:
-            d = port.read(n, True)
+            d = port.read(n)
+            if d == b'':
+                break
             data += d
-            if len(d) < n:
+            if len(d) < n and d.endswith(b'\n'):
                 break
         except KeyboardInterrupt:
             raise
         except:
+            # ex_type, ex_value, tb = sys.exc_info()
+            # print(ex_type, ex_value, tb )
+            # time.sleep(0.1)
+            # m += 1
+            # if m > 3:
+            #     print('4')
             break
-    i = data.rfind(b'#')
-    if i > 0:
-        n1 = int(data[i+1])
-        n2 = int(data[i+2:i+2+n1])
-        n3 = i + n1 + n2 + 1
-    else:
-        n3 = len(data)
-    if n3 > 0 and (n3 > len(data) or data[n3-1] != b'\n'):
-        print('?', data[:10])
     if not data.endswith(b'\n'):
-        print('?', data[:10])
+        print('?', data[:100])
     return data
 
 def tec_send_command_port(connection, cmd, raw_response=False):
@@ -114,13 +112,13 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     if not cmd.endswith(b'\n'):
         cmd += b'\n'
     try:
-        # connection.reset_input_buffer()
-        # connection.reset_output_buffer()
+        connection.reset_input_buffer()
+        connection.reset_output_buffer()
         connection.write(cmd)
     except KeyboardInterrupt:
         raise
     except:
-        return ''
+        pass
     # time.sleep(0.1)
     if b'?' not in cmd:
         if raw_response:

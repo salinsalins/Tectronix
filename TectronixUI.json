@@ -1,7 +1,7 @@
 {
     "main_window": {
         "size": [
-            1496,
+            1335,
             1269
         ],
         "position": [
@@ -16,9 +16,11 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "sel?",
+    "lineEdit_2": "header 0;:wfmpre?",
     "checkBox": true,
-    "ip": "192.168.1.222",
+    "ip": "192.168.1.223",
+    "port": 4000,
+    "timeout": 0.02,
     "comboBox": {
         "items": [
             "Signal",
