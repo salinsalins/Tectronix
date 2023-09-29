@@ -181,9 +181,9 @@ def isfread(filename):
 
         # Absolute values of data obtained as is defined in [Tek-Man] WFMPre:PT_Fmt
         # command description.
-        # v = [yzero + ymult * (y - yoff) for y in data]
+        # y = [yzero + ymult * (y - yoff) for y in data]
         # x = [xzero + xincr * (i - ptoff) for i in range(npts)]
-        v = (numpy.array(data) - yoff) * ymult + yzero
+        y = (numpy.array(data) - yoff) * ymult + yzero
         x = (numpy.arange(npts) - ptoff) * xincr + xzero
 
-        return x, v, head
+        return x, y, head

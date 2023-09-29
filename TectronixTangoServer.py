@@ -26,8 +26,8 @@ empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 
 class TectronixTangoServer(TangoServerPrototype):
-    server_version_value = '1.1'
-    server_name_value = 'Tectronix oscilloscope (TDS3014) Tango device server'
+    server_version_value = '2.1'
+    server_name_value = 'Tectronix oscilloscope (TDS3014 and others)Tango device server'
     device_list = []
 
     # scalar attributes
@@ -223,10 +223,12 @@ class TectronixTangoServer(TangoServerPrototype):
             # self.reconnect_enabled = self.config.get('auto_reconnect', False)
             # create Tectronix oscilloscope device
             ip = self.config.get('ip', '192.168.1.222')
+            port = self.config.get('port', None)
+            timeout = self.config.get('timeout', 0.5)
             config = self.config.get('settings', {})
             if isinstance(config, str):
                 config = json.loads(config)
-            self.tec = TectronixTDS(ip=ip, config=config)
+            self.tec = TectronixTDS(ip=ip, port=port, timeout=timeout, config=config)
             # change device logger to class logger
             self.tec.logger = self.logger
             self.device_type_value = self.tec.tec_type

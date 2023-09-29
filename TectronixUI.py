@@ -49,7 +49,7 @@ from pyqtgraphwidget import MplWidget
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '3.2'
+APPLICATION_VERSION = '4.0'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
@@ -477,7 +477,8 @@ class MainWindow(QMainWindow):
                 p['scale'] = 1.0
                 try:
                     p['pos'] = float(self.device.send_command('CH%s:POSition?' % i))
-                    p['scale'] = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
+                    p['scale'] = float(self.device.send_command('CH%s:SCALe?' % i))
+                    # p['scale'] = float(p['h']['wfid'].split(',')[2].replace('V/div', ''))
                 except KeyboardInterrupt:
                     raise
                 except:
