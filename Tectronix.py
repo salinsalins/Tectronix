@@ -91,7 +91,6 @@ def tec_read_response_port(port):
                 break
             data += d
             if len(d) < n and d.endswith(b'\n'):
-                print('1')
                 break
         except KeyboardInterrupt:
             raise
@@ -103,8 +102,8 @@ def tec_read_response_port(port):
             # if m > 3:
             #     print('4')
             break
-    if not data.endswith(b'\n'):
-        print('?', data[:100])
+    # if not data.endswith(b'\n'):
+    #     print('?', data[:100])
     return data
 
 def tec_send_command_port(connection, cmd, raw_response=False):
@@ -112,6 +111,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
         cmd = str(cmd).encode()
     if not cmd.endswith(b'\n'):
         cmd += b'\n'
+    time.sleep(0.1)
     try:
         connection.reset_input_buffer()
         connection.reset_output_buffer()
@@ -119,13 +119,18 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     except KeyboardInterrupt:
         raise
     except:
-        pass
+        ex_type, ex_value, tb = sys.exc_info()
+        print(ex_type, ex_value, tb )
+        cmd = ''
     # time.sleep(0.1)
     if b'?' not in cmd:
         if raw_response:
             return b''
         return ''
     data = tec_read_response_port(connection)
+    if not data.endswith(b'\n'):
+        time.sleep(0.1)
+        data += tec_read_response_port(connection)
     if raw_response:
         return data[:-1]
     try:
@@ -228,6 +233,38 @@ def tec_get_trace(connection, chan_number):
     x, y, h = isfread(io.BytesIO(isf))
     return x, y, h, isf
 
+
+def scpi_parse(message):
+    if isinstance(message, bytes):
+        message = message.decode('ascii')
+    commands = message.split(';')
+    res = {}
+    cl = []
+    for c in commands:
+        kv = c.split(' ')
+        k = kv[0].strip()
+        ks = k.split(':')
+        if k.startswith(':'):
+            ks = ks[1:]
+            cl = []
+        cl = cl[:-1]
+        cl.extend(ks)
+        key = ':'.join(cl)
+        v = kv[1].strip()
+        res[key] = v
+    ires = {}
+    ki = ires
+    for k in res:
+        ki = ires
+        ks = k.split(':')
+        kul = ks[0]
+        for ku in ks:
+            kul = ku
+            if ku not in ki:
+                ki[ku] = {}
+            ki = ki[ku]
+        ki[kul] = res[k]
+    return res, ires
 
 class TectronixTDS:
     RECONNECT_TIMEOUT = 5.0
@@ -529,6 +566,8 @@ class TectronixTDS:
         if sel is None:
             return {}
         sel = sel.split(';')
+        if sel[0] not in ['0', '1']:
+            sel = sel[1:]
         for i in range(4):
             if sel[i] == '1':
                 result = self.get_data(i + 1)
@@ -604,11 +643,17 @@ if __name__ == '__main__':
     # conn = http.client.HTTPConnection(tec_ip)
     conn = tec_connect(tec_ip, port=4000, timeout=0.1)
 
+    a = tec_send_command_port(conn, 'trig:a?')
+    b, c = scpi_parse(a)
+    send_and_print(conn, 'ALLEv?')
+    send_and_print(conn, 'dese?')
     send_and_print(conn, 'dese 0')
     send_and_print(conn, 'dese?')
     send_and_print(conn, '*esr?')
+    send_and_print(conn, '*ese?')
     send_and_print(conn, '*ese 0')
     send_and_print(conn, '*ese?')
+    send_and_print(conn, '*sre?')
     send_and_print(conn, '*sre 0')
     send_and_print(conn, '*sre?')
     send_and_print(conn, '*stb?')

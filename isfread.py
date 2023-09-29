@@ -34,44 +34,44 @@ def isfread(filename):
     def getnum(string, tag):
         """ Look into the string for the tag and extract the consequent number"""
         return get_tag(tags, tag)
-        n1 = string.find(tag)
-        if n1 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        n2 = string.find(b';', n1)
-        if n2 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        s2 = string[n1 + len(tag):n2]
-        j = s2.find(b'.')
-        if j == -1:
-            return int(string[n1 + len(tag):n2])
-        else:
-            return float(string[n1 + len(tag):n2])
+        # n1 = string.find(tag)
+        # if n1 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # n2 = string.find(b';', n1)
+        # if n2 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # s2 = string[n1 + len(tag):n2]
+        # j = s2.find(b'.')
+        # if j == -1:
+        #     return int(string[n1 + len(tag):n2])
+        # else:
+        #     return float(string[n1 + len(tag):n2])
 
     def getstr(string, tag):
         """ Look into the string for the tag and extract the consequent string"""
         return get_tag(tags, tag)
-        n1 = string.find(tag)
-        if n1 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        n2 = string.find(b';', n1)
-        if n2 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        return string[n1 + len(tag):n2].decode('ascii').strip()
+        # n1 = string.find(tag)
+        # if n1 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # n2 = string.find(b';', n1)
+        # if n2 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # return string[n1 + len(tag):n2].decode('ascii').strip()
 
     def getquotedstr(string, tag):
         """ Look into the string for the tag and extract the consequent quoted
         string"""
         return get_tag(tags, tag)
-        n1 = string.find(tag)
-        if n1 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        n2 = string.find(b'"', n1 + 1)
-        if n2 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        n3 = string.find(b'"', n2 + 1)
-        if n3 < 0:
-            raise ValueError('Wrong format of *.isf file.')
-        return string[n2 + 1:n3].decode('ascii')
+        # n1 = string.find(tag)
+        # if n1 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # n2 = string.find(b'"', n1 + 1)
+        # if n2 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # n3 = string.find(b'"', n2 + 1)
+        # if n3 < 0:
+        #     raise ValueError('Wrong format of *.isf file.')
+        # return string[n2 + 1:n3].decode('ascii')
 
     if isinstance(filename, str):
         fid = open(filename, 'rb')

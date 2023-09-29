@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1480,
-            1222
+            1124,
+            840
         ],
         "position": [
-            2305,
-            184
+            559,
+            109
         ]
     },
     "log_level": 10,
@@ -16,7 +16,7 @@
         ],
         "index": 0
     },
-    "lineEdit_2": "header 0;:wfmpre?",
+    "lineEdit_2": "ch1:pos?",
     "checkBox": true,
     "ip": "192.168.1.223",
     "port": 4000,

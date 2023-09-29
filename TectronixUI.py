@@ -173,6 +173,8 @@ class MainWindow(QMainWindow):
     def read_config(self):
         if self.device.connected:
             sel = self.device.config['SELect?'].split(';')
+            if sel[0] not in ['0', '1']:
+                sel = sel[1:]
             v = sel[0] == '1'
             self.checkBox_1.setChecked(v)
             v = sel[1] == '1'
@@ -181,18 +183,23 @@ class MainWindow(QMainWindow):
             self.checkBox_3.setChecked(v)
             v = sel[3] == '1'
             self.checkBox_4.setChecked(v)
-            v = self.device.config['CH1?'].split(';')
-            self.lineEdit_11.setText(v[0])
-            self.lineEdit_17.setText(v[1])
-            v = self.device.config['CH2?'].split(';')
-            self.lineEdit_12.setText(v[0])
-            self.lineEdit_18.setText(v[1])
-            v = self.device.config['CH3?'].split(';')
-            self.lineEdit_13.setText(v[0])
-            self.lineEdit_19.setText(v[1])
-            v = self.device.config['CH4?'].split(';')
-            self.lineEdit_14.setText(v[0])
-            self.lineEdit_20.setText(v[1])
+            v = self.device.send_command('CH1:SCAle?')
+            self.lineEdit_11.setText(v)
+            v = self.device.send_command('CH1:POSition?')
+            self.lineEdit_17.setText(v)
+            # v = self.device.config['CH2?'].split(';')
+            v = self.device.send_command('CH2:SCAle?')
+            self.lineEdit_12.setText(v)
+            v = self.device.send_command('CH2:POSition?')
+            self.lineEdit_18.setText(v)
+            v = self.device.send_command('CH3:SCAle?')
+            self.lineEdit_13.setText(v)
+            v = self.device.send_command('CH3:POSition?')
+            self.lineEdit_19.setText(v)
+            v = self.device.send_command('CH4:SCAle?')
+            self.lineEdit_14.setText(v)
+            v = self.device.send_command('CH4:POSition?')
+            self.lineEdit_20.setText(v)
             v = self.device.send_command('HORizontal:MAIn:SCAle?')
             self.lineEdit_15.setText(v)
             v = self.device.send_command('HORizontal:TRIGger:POSition?')
@@ -485,7 +492,7 @@ class MainWindow(QMainWindow):
             self.plot_data(plots)
             colors = ['y', 'c', 'm', 'g']
             try:
-                sou = self.device.send_command('TRIG:A:EDG:SOU?')
+                sou = self.device.send_command('TRIG:A:EDGE:SOU?')
                 i = int(sou[2])
                 clr = colors[i-1]
             except KeyboardInterrupt:
