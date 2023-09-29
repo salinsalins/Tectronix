@@ -111,7 +111,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
         cmd = str(cmd).encode()
     if not cmd.endswith(b'\n'):
         cmd += b'\n'
-    time.sleep(0.1)
+    # time.sleep(0.1)
     try:
         connection.reset_input_buffer()
         connection.reset_output_buffer()
@@ -121,7 +121,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
     except:
         ex_type, ex_value, tb = sys.exc_info()
         print(ex_type, ex_value, tb )
-        cmd = ''
+        cmd = b''
     # time.sleep(0.1)
     if b'?' not in cmd:
         if raw_response:

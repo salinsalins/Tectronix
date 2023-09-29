@@ -109,6 +109,7 @@ class MainWindow(QMainWindow):
         self.clock = QLabel(" ")
         # self.clock.setFont(QFont('Open Sans Bold', 14, weight=QFont.Bold))
         self.clock.setFont(QFont('Open Sans Bold', 12))
+        self.statusBar().setFont(QFont('Open Sans Bold', 12))
         self.statusBar().addPermanentWidget(self.clock)
         #
         self.rearm = False
