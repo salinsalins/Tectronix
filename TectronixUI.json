@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1124,
-            840
+            1586,
+            972
         ],
         "position": [
-            559,
-            109
+            563,
+            289
         ]
     },
     "log_level": 10,
@@ -18,9 +18,7 @@
     },
     "lineEdit_2": "ch1:pos?",
     "checkBox": true,
-    "ip": "192.168.1.223",
-    "port": 4000,
-    "timeout": 0.02,
+    "ip": "192.168.1.222",
     "comboBox": {
         "items": [
             "Signal",

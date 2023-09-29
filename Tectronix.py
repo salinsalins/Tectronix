@@ -34,6 +34,7 @@ def tec_connect(ip, timeout=None, port=None):
         if timeout is None:
             connection = Moxa.MoxaTCPComPort(ip, port)
         else:
+            timeout = min(0.2, timeout)
             connection = Moxa.MoxaTCPComPort(ip, port, timeout=timeout)
     return connection
 
