@@ -19,8 +19,7 @@ import Moxa
 
 u = os.path.dirname(os.path.realpath(sys.argv[0]))
 util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
-if util_path not in sys.path:
-    sys.path.append(util_path)
+if util_path not in sys.path: sys.path.append(util_path)
 
 from log_exception import log_exception
 from config_logger import config_logger
@@ -106,6 +105,7 @@ def tec_read_response_port(port):
     #     print('?', data[:100])
     return data
 
+
 def tec_send_command_port(connection, cmd, raw_response=False):
     if not isinstance(cmd, bytes):
         cmd = str(cmd).encode()
@@ -120,7 +120,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
         raise
     except:
         ex_type, ex_value, tb = sys.exc_info()
-        print(ex_type, ex_value, tb )
+        print(ex_type, ex_value, tb)
         cmd = b''
     # time.sleep(0.1)
     if b'?' not in cmd:
@@ -171,8 +171,8 @@ def tec_send_command_html(connection, cmd, raw_response=False):
         n1 = data[n:].find('>')
         if n1 >= 0:
             n2 = data.find('</TEXTAREA')
-            if n2 >= n+n1+1:
-                out = data[n+n1+1:n2].strip()
+            if n2 >= n + n1 + 1:
+                out = data[n + n1 + 1:n2].strip()
     if raw_response:
         return out, response.status, raw
     return out
@@ -204,7 +204,7 @@ def tec_get_image(connection):
 
 
 def tec_get_isf_port(connection, chan_number):
-    tec_send_command_port(connection, 'DATa:SOUrce CH%s'%chan_number)
+    tec_send_command_port(connection, 'DATa:SOUrce CH%s' % chan_number)
     tec_send_command_port(connection, 'HEADER 1')
     data = tec_send_command_port(connection, 'WAVFrm?', raw_response=True)
     return data
@@ -265,6 +265,7 @@ def scpi_parse(message):
             ki = ki[ku]
         ki[kul] = res[k]
     return res, ires
+
 
 class TectronixTDS:
     RECONNECT_TIMEOUT = 5.0
@@ -635,8 +636,9 @@ def send_and_print(conn, cmd, **kwargs):
             pr += b' ... '
     if isinstance(pr, str):
         pr = '"' + pr + '"'
-    print('%12s'%cmd, ' ->', 'len=%s' % m, '%6.3f s' % (time.time()-t0), pr)
+    print('%12s' % cmd, ' ->', 'len=%s' % m, '%6.3f s' % (time.time() - t0), pr)
     return result
+
 
 if __name__ == '__main__':
     tec_ip = "192.168.1.223"
@@ -670,7 +672,7 @@ if __name__ == '__main__':
     # send_and_print(conn, 'WFMPre?')
     # send_and_print(conn, 'CURVe?', raw_response=True)
     send_and_print(conn, 'BUSY?')
-    send_and_print(conn, 'DATa:SOUrce CH%s'%1)
+    send_and_print(conn, 'DATa:SOUrce CH%s' % 1)
     send_and_print(conn, 'DATa:SOUrce?')
     send_and_print(conn, 'HEAD 1')
     send_and_print(conn, 'HEAD?')
@@ -704,7 +706,6 @@ if __name__ == '__main__':
     # command = 'TRIG?'  # query trigger params
     # command = 'TRIG FORC'  # force trigger
     # command = 'TRIG:STATE?'  # trigger state
-
 
     # print('Connecting')
     # t0 = time.time()

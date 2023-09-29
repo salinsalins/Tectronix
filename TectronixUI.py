@@ -8,38 +8,28 @@ s='s=%r;print(s%%s)';print(s%s)
 """
 import collections
 import datetime
-import io
-
 import os.path
 import sys
 import time
+
 import numpy
-import scipy
-
-import PyQt5
-import pyqtgraph
-
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import qApp
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QComboBox
-from PyQt5.QtWidgets import QCheckBox
-from PyQt5.QtWidgets import QPlainTextEdit
 from PyQt5 import uic
-from PyQt5.QtCore import QSize
 from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QSize
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QColor
-from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QFont
-import PyQt5.QtGui as QtGui
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import qApp
 
 from Tectronix import TectronixTDS
 
-if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+u = os.path.dirname(os.path.realpath(sys.argv[0]))
+util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
+if util_path not in sys.path: sys.path.append(util_path)
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
@@ -49,7 +39,7 @@ from pyqtgraphwidget import MplWidget
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '4.0'
+APPLICATION_VERSION = '4.1'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 

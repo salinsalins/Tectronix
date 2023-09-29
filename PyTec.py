@@ -5,48 +5,39 @@ Created on Jul 28, 2019
 @author: sanin
 '''
 
-import os.path
-import sys
 import json
 import logging
+import os.path
+import sys
 import time
 
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import qApp
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QComboBox
-from PyQt5.QtWidgets import QCheckBox
-from PyQt5.QtWidgets import QPlainTextEdit
-from PyQt5 import uic
-from PyQt5.QtCore import QSize
-from PyQt5.QtCore import QPoint
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QColor
-from PyQt5.QtGui import QBrush
-from PyQt5.QtGui import QFont
-import PyQt5.QtGui as QtGui
-from PyQt5 import QtNetwork
-
 import numpy
-from mplwidget import MplWidget
-import matplotlib
+from PyQt5 import QtNetwork
+from PyQt5 import uic
+from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import qApp
 
-from smooth import smooth
-from isfread import isfread
-
-from widgetstate import set_state, get_state
 # Global configuration dictionary
 import conf
+from isfread import isfread
+from mplwidget import MplWidget
+from widgetstate import set_state, get_state
+
 #from conf import CONFIG
 #CONFIG = conf.CONFIG
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'PyTec'
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '0.1'
+APPLICATION_VERSION = '1.0'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
