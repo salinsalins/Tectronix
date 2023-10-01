@@ -240,6 +240,7 @@ def scpi_parse(message):
     commands = message.split(';')
     res = {}
     cl = []
+    lres = []
     for c in commands:
         kv = c.split(' ')
         k = kv[0].strip()
@@ -252,6 +253,7 @@ def scpi_parse(message):
         key = ':'.join(cl)
         v = kv[1].strip()
         res[key] = v
+        lres.append((key, v))
     ires = {}
     ki = ires
     for k in res:
@@ -264,7 +266,7 @@ def scpi_parse(message):
                 ki[ku] = {}
             ki = ki[ku]
         ki[kul] = res[k]
-    return res, ires
+    return lres, res, ires
 
 
 class TectronixTDS:
