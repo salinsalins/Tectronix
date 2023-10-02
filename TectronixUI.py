@@ -296,21 +296,22 @@ class MainWindow(QMainWindow):
 
     def float_filter(self, v):
         try:
-            s = '%e' % float(v)
-            while '0e' in s:
-                s = s.replace('0e', 'e')
-            s = s.replace('.e', 'e')
-            while 'e+0' in s:
-                s = s.replace('e+0', 'e+')
-            while 'e-0' in s:
-                s = s.replace('e-0', 'e-')
-            if s.endswith('e-'):
-                s = s.replace('e-', '')
-            if s.endswith('e+'):
-                s = s.replace('e+', '')
-            if s.endswith('.'):
-                s = s.replace('.', '.0')
+            s = '%5.3g' % float(v)
             return s
+            # while '0e' in s:
+            #     s = s.replace('0e', 'e')
+            # s = s.replace('.e', 'e')
+            # while 'e+0' in s:
+            #     s = s.replace('e+0', 'e+')
+            # while 'e-0' in s:
+            #     s = s.replace('e-0', 'e-')
+            # if s.endswith('e-'):
+            #     s = s.replace('e-', '')
+            # if s.endswith('e+'):
+            #     s = s.replace('e+', '')
+            # if s.endswith('.'):
+            #     s = s.replace('.', '.0')
+            # return s
         except ValueError:
             return "???"
 
