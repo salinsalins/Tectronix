@@ -45,6 +45,7 @@ UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
 FALSE = [False, None, 'False', 'false', '0', '0.0', 0, 0.0]
 
+
 class MainWindow(QMainWindow):
     PLOT_COLORS = ['y', 'c', 'm', 'g']
     FADED_COLORS = [(200, 200, 0), (0, 200, 200), (200, 0, 200), (0, 200, 0)]
@@ -160,7 +161,6 @@ class MainWindow(QMainWindow):
         #
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
 
-
     def read_config(self):
         if self.device.connected:
             sel = self.device.config['SELect?'].split(';')
@@ -174,27 +174,37 @@ class MainWindow(QMainWindow):
             self.checkBox_3.setChecked(v)
             v = sel[3] == '1'
             self.checkBox_4.setChecked(v)
-            v = self.device.send_command('CH1:SCAle?')
-            self.lineEdit_11.setText(v)
-            v = self.device.send_command('CH1:POSition?')
-            self.lineEdit_17.setText(v)
+            self.update_widget(self.lineEdit_11, 'CH1:SCAle?', filter=self.float_filter)
+            # v = self.device.send_command('CH1:SCAle?')
+            # self.lineEdit_11.setText(v)
+            self.update_widget(self.lineEdit_17, 'CH1:POSition?', filter=self.float_filter)
+            # v = self.device.send_command('CH1:POSition?')
+            # self.lineEdit_17.setText(v)
             # v = self.device.config['CH2?'].split(';')
-            v = self.device.send_command('CH2:SCAle?')
-            self.lineEdit_12.setText(v)
-            v = self.device.send_command('CH2:POSition?')
-            self.lineEdit_18.setText(v)
-            v = self.device.send_command('CH3:SCAle?')
-            self.lineEdit_13.setText(v)
-            v = self.device.send_command('CH3:POSition?')
-            self.lineEdit_19.setText(v)
-            v = self.device.send_command('CH4:SCAle?')
-            self.lineEdit_14.setText(v)
-            v = self.device.send_command('CH4:POSition?')
-            self.lineEdit_20.setText(v)
-            v = self.device.send_command('HORizontal:MAIn:SCAle?')
-            self.lineEdit_15.setText(v)
-            v = self.device.send_command('HORizontal:TRIGger:POSition?')
-            self.lineEdit_16.setText(v)
+            self.update_widget(self.lineEdit_12, 'CH2:SCAle?', filter=self.float_filter)
+            # v = self.device.send_command('CH2:SCAle?')
+            # self.lineEdit_12.setText(v)
+            self.update_widget(self.lineEdit_18, 'CH2:POSition?', filter=self.float_filter)
+            # v = self.device.send_command('CH2:POSition?')
+            # self.lineEdit_18.setText(v)
+            self.update_widget(self.lineEdit_13, 'CH3:SCAle?', filter=self.float_filter)
+            # v = self.device.send_command('CH3:SCAle?')
+            # self.lineEdit_13.setText(v)
+            self.update_widget(self.lineEdit_19, 'CH3:POSition?', filter=self.float_filter)
+            # v = self.device.send_command('CH3:POSition?')
+            # self.lineEdit_19.setText(v)
+            self.update_widget(self.lineEdit_14, 'CH4:SCAle?', filter=self.float_filter)
+            # v = self.device.send_command('CH4:SCAle?')
+            # self.lineEdit_14.setText(v)
+            self.update_widget(self.lineEdit_20, 'CH4:POSition?', filter=self.float_filter)
+            # v = self.device.send_command('CH4:POSition?')
+            # self.lineEdit_20.setText(v)
+            self.update_widget(self.lineEdit_15, 'HORizontal:MAIn:SCAle?', filter=self.float_filter)
+            # v = self.device.send_command('HORizontal:MAIn:SCAle?')
+            # self.lineEdit_15.setText(v)
+            self.update_widget(self.lineEdit_16, 'HORizontal:TRIGger:POSition?', filter=self.float_filter)
+            # v = self.device.send_command('HORizontal:TRIGger:POSition?')
+            # self.lineEdit_16.setText(v)
 
     def erase(self):
         self.mplw.canvas.ax.clear()
@@ -249,10 +259,12 @@ class MainWindow(QMainWindow):
     def ch4_scale_changed(self):
         self.set_widget_float(self.lineEdit_14, 'CH4:SCAle')
 
-    def update_widget(self, widget, command, function=None):
+    def update_widget(self, widget, command, function=None, filter=None):
         v = self.device.send_command(command)
         if v is None:
             return
+        if filter is not None:
+            v = filter(v)
         widget.blockSignals(True)
         if function is not None:
             if hasattr(widget, function):
@@ -278,9 +290,29 @@ class MainWindow(QMainWindow):
             f = float(v)
             if self.device.send_command(command + ' ' + v) is None:
                 return
-            self.update_widget(widget, command + '?')
+            self.update_widget(widget, command + '?', filter=self.float_filter)
         except ValueError:
             return
+
+    def float_filter(self, v):
+        try:
+            s = '%e' % float(v)
+            while '0e' in s:
+                s = s.replace('0e', 'e')
+            s = s.replace('.e', 'e')
+            while 'e+0' in s:
+                s = s.replace('e+0', 'e+')
+            while 'e-0' in s:
+                s = s.replace('e-0', 'e-')
+            if s.endswith('e-'):
+                s = s.replace('e-', '')
+            if s.endswith('e+'):
+                s = s.replace('e+', '')
+            if s.endswith('.'):
+                s = s.replace('.', '.0')
+            return s
+        except ValueError:
+            return "???"
 
     def ch1_clicked(self):
         if self.checkBox_1.isChecked():
@@ -399,7 +431,7 @@ class MainWindow(QMainWindow):
             axes.plot(fx, fp, color=color)
             self.mplw.autoRange()
         elif self.comboBox.currentIndex() == 2:
-            fy = numpy.power(10.0, 1.667*y-11.46)
+            fy = numpy.power(10.0, 1.667 * y - 11.46)
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Pressure, Pa')
             axes.plot(x, fy, color=color)
@@ -486,13 +518,13 @@ class MainWindow(QMainWindow):
             try:
                 sou = self.device.send_command('TRIG:A:EDGE:SOU?')
                 i = int(sou[2])
-                clr = colors[i-1]
+                clr = colors[i - 1]
             except KeyboardInterrupt:
                 raise
             except:
                 clr = 'w'
             axes = self.mplw.canvas.ax
-            axes.plot([0.0,0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 1})
+            axes.plot([0.0, 0.0], [-5.0, 5.0], color=clr, symbol='t1', width=3, symbolPen={'color': clr, 'width': 1})
 
     @staticmethod
     def dts():
