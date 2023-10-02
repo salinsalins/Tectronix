@@ -25,11 +25,11 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import qApp
 
-from Tectronix import TectronixTDS
-
 u = os.path.dirname(os.path.realpath(sys.argv[0]))
 util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
 if util_path not in sys.path: sys.path.append(util_path)
+
+from Tectronix import TectronixTDS
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
