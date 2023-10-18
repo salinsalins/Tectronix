@@ -27,14 +27,13 @@ from PyQt5.QtWidgets import qApp
 
 from Tectronix import TectronixTDS
 
-u = os.path.dirname(os.path.realpath(sys.argv[0]))
-util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
-if util_path not in sys.path: sys.path.append(util_path)
+import utils
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
 # from mplwidget import MplWidget
 from pyqtgraphwidget import MplWidget
+from smooth import smooth
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
@@ -110,6 +109,7 @@ class MainWindow(QMainWindow):
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
         #
+        self.smooth = self.config.get('smooth', 0)
         reconnect_timeout = self.config.get('reconnect_timeout', 0.0)
         TectronixTDS.RECONNECT_TIMEOUT = reconnect_timeout
         timeout = self.config.get('timeout', 1.1)
@@ -409,7 +409,7 @@ class MainWindow(QMainWindow):
     def plot_trace(self, trace, color='w'):
         axes = self.mplw.canvas.ax
         x = trace['x']
-        y = trace['y']
+        y = smooth(trace['y'], self.smooth)
         if self.comboBox.currentIndex() == 0:
             p = trace['pos']
             y = (trace['y'] / trace['scale']) + p
