@@ -410,6 +410,7 @@ class MainWindow(QMainWindow):
         axes = self.mplw.canvas.ax
         x = trace['x']
         y = smooth(trace['y'], self.smooth)
+        # y = trace['y']
         if self.comboBox.currentIndex() == 0:
             p = trace['pos']
             y = (trace['y'] / trace['scale']) + p
