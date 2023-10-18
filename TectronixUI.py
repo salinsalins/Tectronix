@@ -408,8 +408,8 @@ class MainWindow(QMainWindow):
 
     def plot_trace(self, trace, color='w'):
         axes = self.mplw.canvas.ax
-        x = trace['x']
         y = smooth(trace['y'], self.smooth)
+        x = smooth(trace['x'], self.smooth)
         # y = trace['y']
         if self.comboBox.currentIndex() == 0:
             p = trace['pos']
