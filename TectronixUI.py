@@ -25,16 +25,15 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import qApp
 
-u = os.path.dirname(os.path.realpath(sys.argv[0]))
-util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
-if util_path not in sys.path: sys.path.append(util_path)
-
 from Tectronix import TectronixTDS
+
+import utils
 
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
 # from mplwidget import MplWidget
 from pyqtgraphwidget import MplWidget
+from smooth import smooth
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
@@ -64,7 +63,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APPLICATION_NAME)  # Set a title
         # self.setWindowIcon(QtGui.QIcon('icon.png'))
         restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+                         widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox,
+                                  self.spinBox))
         # if self.comboBox.findText(self.folder) < 0:
         #     pass
         self.folder = self.config.get('folder', 'D:/tec_data')
@@ -110,6 +110,9 @@ class MainWindow(QMainWindow):
             self.logger.error("No Oscilloscopes defined")
             exit(-111)
         #
+        # self.smooth = self.config.get('smooth', 1)
+        # self.spinBox.setValue(self.smooth)
+        # self.spinBox.valueChanged.connect(self.smooth_changed)
         reconnect_timeout = self.config.get('reconnect_timeout', 0.0)
         TectronixTDS.RECONNECT_TIMEOUT = reconnect_timeout
         timeout = self.config.get('timeout', 1.1)
@@ -231,6 +234,9 @@ class MainWindow(QMainWindow):
 
     def horiz_scale_changed(self):
         self.set_widget_float(self.lineEdit_15, 'HORizontal:MAIn:SCAle')
+
+    # def smooth_changed(self):
+    #     self.smooth = self.spinBox.value()
 
     def horiz_position_changed(self):
         self.set_widget_float(self.lineEdit_16, 'HORizontal:TRIGger:POSition')
@@ -408,8 +414,10 @@ class MainWindow(QMainWindow):
 
     def plot_trace(self, trace, color='w'):
         axes = self.mplw.canvas.ax
-        x = trace['x']
-        y = trace['y']
+        smooth = self.spinBox.value()
+        y = smooth(trace['y'], smooth)
+        x = smooth(trace['x'], smooth)
+        # y = trace['y']
         if self.comboBox.currentIndex() == 0:
             p = trace['pos']
             y = (trace['y'] / trace['scale']) + p
@@ -462,7 +470,8 @@ class MainWindow(QMainWindow):
         self.frame_6.hide()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox))
+                      widgets=(self.comboBox, self.comboBox_2, self.lineEdit_2, self.checkBox,
+                               self.spinBox))
         self.device.disconnect()
 
     def timer_handler(self):
