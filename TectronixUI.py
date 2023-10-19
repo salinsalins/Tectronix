@@ -440,7 +440,7 @@ class MainWindow(QMainWindow):
             axes.plot(fx, fp, color=color)
             self.mplw.autoRange()
         elif self.comboBox.currentIndex() == 2:
-            fy = numpy.power(10.0, 1.667 * y - 11.46)
+            fy = numpy.power(10.0, 1.667 * y - 11.46)*133.0
             axes.set_xlabel('Time, s')
             axes.set_ylabel('Pressure, Pa')
             axes.plot(x, fy, color=color)
@@ -463,7 +463,7 @@ class MainWindow(QMainWindow):
     def show_about(self):
         QMessageBox.information(self, 'About', APPLICATION_NAME +
                                 ' Version ' + APPLICATION_VERSION +
-                                '\nTextronix oscilloscope control utility.', QMessageBox.Ok)
+                                '\nTectronix oscilloscope control utility.', QMessageBox.Ok)
 
     def on_quit(self):
         timer.stop()
