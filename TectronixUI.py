@@ -25,10 +25,9 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import qApp
 
-from Tectronix import TectronixTDS
-
 import utils
 
+from Tectronix import TectronixTDS
 from QtUtils import restore_settings, save_settings
 from config_logger import config_logger
 # from mplwidget import MplWidget

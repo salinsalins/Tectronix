@@ -648,7 +648,7 @@ if __name__ == '__main__':
     conn = tec_connect(tec_ip, port=4000, timeout=0.1)
 
     a = tec_send_command_port(conn, 'trig:a?')
-    b, c = scpi_parse(a)
+    b, c, d = scpi_parse(a)
     send_and_print(conn, 'ALLEv?')
     send_and_print(conn, 'dese?')
     send_and_print(conn, 'dese 0')
