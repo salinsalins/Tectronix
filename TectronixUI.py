@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import qApp
 
+if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+
 from Tectronix import TectronixTDS
 
 import utils
