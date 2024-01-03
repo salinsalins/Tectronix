@@ -363,12 +363,12 @@ class TectronixTDS:
         self.tec_type = ''
         self.last_aq = ''
         self.connect(timeout=timeout)
-        self.set_config()
         if self.connected:
+            self.set_config()
             self.logger.debug('%s at %s has been initialized (last_aq=%s) in %6.3f s',
                               self.tec_type, self.ip, self.last_aq, time.time() - t0)
         else:
-            self.logger.info('Can not initialize tectronix oscilloscope')
+            self.logger.info('Can not initialize Tectronix oscilloscope')
 
     def __del__(self):
         if self.connection is not None:
@@ -444,11 +444,20 @@ class TectronixTDS:
 
     def reconnect(self):
         if self.connected:
+            if self.tec_type != ' ':
+                return True
+            self.set_config()
+            if self.tec_type == ' ':
+                return False
             return True
         if self.reconnect_time <= time.time():
             self.logger.debug('Reconnecting')
             self.connect()
-            # self.send_command('HEADer 0')
+            if self.connected:
+                if self.tec_type == ' ':
+                    self.set_config()
+            else:
+                self.reconnect_time = time.time() + self.RECONNECT_TIMEOUT
             return self.connected
         else:
             return False
