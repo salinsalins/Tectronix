@@ -356,7 +356,8 @@ class MainWindow(QMainWindow):
         # self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: red;}')
 
     def turn_green(self):
-        self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
+        self.turn_color(self.checkBox_5, 'green')
+        # self.checkBox_5.setStyleSheet('QCheckBox::indicator:unchecked {background-color: green;}')
 
     def run_toggled(self):
         if self.pushButton_4.isChecked():
@@ -378,7 +379,7 @@ class MainWindow(QMainWindow):
             self.turn_green()
             self.rearm = False
         else:
-            self.turn_ref()
+            self.turn_red()
 
     def enable_clicked(self):
         self.plot_data()
