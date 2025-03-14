@@ -120,7 +120,7 @@ def tec_send_command_port(connection, cmd, raw_response=False):
         raise
     except:
         ex_type, ex_value, tb = sys.exc_info()
-        print(ex_type, ex_value, tb)
+        # print(ex_type, ex_value, tb)
         cmd = b''
     # time.sleep(0.1)
     if b'?' not in cmd:
@@ -243,17 +243,18 @@ def scpi_parse(message):
     lres = []
     for c in commands:
         kv = c.split(' ')
-        k = kv[0].strip()
-        ks = k.split(':')
-        if k.startswith(':'):
-            ks = ks[1:]
-            cl = []
-        cl = cl[:-1]
-        cl.extend(ks)
-        key = ':'.join(cl)
-        v = kv[1].strip()
-        res[key] = v
-        lres.append((key, v))
+        if len(kv) > 1:
+            k = kv[0].strip()
+            ks = k.split(':')
+            if k.startswith(':'):
+                ks = ks[1:]
+                cl = []
+            cl = cl[:-1]
+            cl.extend(ks)
+            key = ':'.join(cl)
+            v = kv[1].strip()
+            res[key] = v
+            lres.append((key, v))
     ires = {}
     ki = ires
     for k in res:
