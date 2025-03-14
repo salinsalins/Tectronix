@@ -28,7 +28,7 @@ empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 class TectronixTangoServer(TangoServerPrototype):
     server_version_value = '2.2'
-    server_name_value = 'Tectronix oscilloscope (TDS3014 and others)Tango device server'
+    server_name_value = 'Tectronix oscilloscope (TDS3014 and others) Tango device server'
     device_list = []
 
     # scalar attributes
@@ -77,7 +77,49 @@ class TectronixTangoServer(TangoServerPrototype):
                           unit="V/div", format="%12.6f",
                           doc='Vertical scale the channel in Volts per division')
 
+    ch2_scale = attribute(label="channel2_scale", dtype=float,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          min_value=1.0e-6, max_value=5.0,
+                          unit="V/div", format="%12.6f",
+                          doc='Vertical scale the channel in Volts per division')
+
+    ch3_scale = attribute(label="channel3_scale", dtype=float,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          min_value=1.0e-6, max_value=5.0,
+                          unit="V/div", format="%12.6f",
+                          doc='Vertical scale the channel in Volts per division')
+
+    ch4_scale = attribute(label="channel4_scale", dtype=float,
+                          display_level=DispLevel.OPERATOR,
+                          access=AttrWriteType.READ_WRITE,
+                          min_value=1.0e-6, max_value=5.0,
+                          unit="V/div", format="%12.6f",
+                          doc='Vertical scale the channel in Volts per division')
+
     ch1_offset = attribute(label="channel1_offset", dtype=float,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ_WRITE,
+                           min_value=-5.0, max_value=5.0,
+                           unit="div", format="%5.2f",
+                           doc='Vertical offset for the channel in divisions')
+
+    ch2_offset = attribute(label="channel2_offset", dtype=float,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ_WRITE,
+                           min_value=-5.0, max_value=5.0,
+                           unit="div", format="%5.2f",
+                           doc='Vertical offset for the channel in divisions')
+
+    ch3_offset = attribute(label="channel3_offset", dtype=float,
+                           display_level=DispLevel.OPERATOR,
+                           access=AttrWriteType.READ_WRITE,
+                           min_value=-5.0, max_value=5.0,
+                           unit="div", format="%5.2f",
+                           doc='Vertical offset for the channel in divisions')
+
+    ch4_offset = attribute(label="channel4_offset", dtype=float,
                            display_level=DispLevel.OPERATOR,
                            access=AttrWriteType.READ_WRITE,
                            min_value=-5.0, max_value=5.0,
@@ -240,8 +282,17 @@ class TectronixTangoServer(TangoServerPrototype):
                 self.read_trigger_position()
                 self.trigger_position.set_write_value(self.trig_val)
                 self.ch1_state.set_write_value(self.read_ch1_state())
+                self.ch2_state.set_write_value(self.read_ch2_state())
+                self.ch3_state.set_write_value(self.read_ch3_state())
+                self.ch4_state.set_write_value(self.read_ch4_state())
                 self.ch1_scale.set_write_value(self.read_ch1_scale())
+                self.ch2_scale.set_write_value(self.read_ch2_scale())
+                self.ch3_scale.set_write_value(self.read_ch3_scale())
+                self.ch4_scale.set_write_value(self.read_ch4_scale())
                 self.ch1_offset.set_write_value(self.read_ch1_offset())
+                self.ch2_offset.set_write_value(self.read_ch2_offset())
+                self.ch3_offset.set_write_value(self.read_ch3_offset())
+                self.ch4_offset.set_write_value(self.read_ch4_offset())
                 self.init_result = None
                 msg = '%s has been initialized' % self.device_type_value
                 self.log_debug(msg)
@@ -250,14 +301,14 @@ class TectronixTangoServer(TangoServerPrototype):
             else:
                 msg = '%s initialization error' % self.device_type_value
                 self.log_warning(msg)
-                self.set_state(DevState.FAULT, 'initialization error')
+                self.set_fault('Initialization error')
                 return False
         except KeyboardInterrupt:
             raise
         except Exception as ex:
             self.init_result = ex
             self.log_exception('Exception initiating Tectronix oscilloscope')
-            self.set_state(DevState.FAULT, 'Initialization error')
+            self.set_fault('Initialization error')
             return False
 
     def delete_device(self):
@@ -296,6 +347,7 @@ class TectronixTangoServer(TangoServerPrototype):
         except:
             self.log_exception()
             self.hor_sc = float('nan')
+            self.set_fault()
         return self.hor_sc
 
     def write_horizontal_scale(self, v):
@@ -313,6 +365,7 @@ class TectronixTangoServer(TangoServerPrototype):
         except:
             self.hor_sc = float('nan')
             self.log_exception()
+            self.set_fault()
 
     def read_trigger_position(self):
         try:
@@ -322,6 +375,7 @@ class TectronixTangoServer(TangoServerPrototype):
             raise
         except:
             self.log_exception()
+            self.set_fault()
         return self.trig_val
 
     def write_trigger_position(self, v):
@@ -381,35 +435,17 @@ class TectronixTangoServer(TangoServerPrototype):
     def read_ch1_state(self):
         return bool(self.tec.get_channel_state(1))
 
-    def write_ch1_state(self, state):
-        self.tec.set_channel_state(1, bool(state))
-
-    def read_ch1_scale(self):
-        return self.tec.get_channel_scale(1)
-
-    def write_ch1_scale(self, v):
-        self.tec.set_channel_scale(1, v)
-
-    def read_ch1_offset(self):
-        return self.tec.get_channel_offset(1)
-
-    def write_ch1_offset(self, v):
-        self.tec.set_channel_offset(1, v)
-
-    def read_chany01(self):
-        return self.y[0]
-
-    def read_chanx01(self):
-        return self.x[0]
-
     def read_ch2_state(self):
-        return self.tec.get_channel_state(2)
+        return bool(self.tec.get_channel_state(2))
 
     def read_ch3_state(self):
-        return self.tec.get_channel_state(3)
+        return bool(self.tec.get_channel_state(3))
 
     def read_ch4_state(self):
-        return self.tec.get_channel_state(4)
+        return bool(self.tec.get_channel_state(4))
+
+    def write_ch1_state(self, state):
+        self.tec.set_channel_state(1, bool(state))
 
     def write_ch2_state(self, state):
         self.tec.set_channel_state(2, bool(state))
@@ -419,6 +455,60 @@ class TectronixTangoServer(TangoServerPrototype):
 
     def write_ch4_state(self, state):
         self.tec.set_channel_state(4, bool(state))
+
+    def read_ch1_scale(self):
+        return self.tec.get_channel_scale(1)
+
+    def read_ch2_scale(self):
+        return self.tec.get_channel_scale(2)
+
+    def read_ch3_scale(self):
+        return self.tec.get_channel_scale(3)
+
+    def read_ch4_scale(self):
+        return self.tec.get_channel_scale(4)
+
+    def write_ch1_scale(self, v):
+        self.tec.set_channel_scale(1, v)
+
+    def write_ch2_scale(self, v):
+        self.tec.set_channel_scale(2, v)
+
+    def write_ch3_scale(self, v):
+        self.tec.set_channel_scale(3, v)
+
+    def write_ch4_scale(self, v):
+        self.tec.set_channel_scale(4, v)
+
+    def read_ch1_offset(self):
+        return self.tec.get_channel_offset(1)
+
+    def read_ch2_offset(self):
+        return self.tec.get_channel_offset(2)
+
+    def read_ch3_offset(self):
+        return self.tec.get_channel_offset(3)
+
+    def read_ch4_offset(self):
+        return self.tec.get_channel_offset(4)
+
+    def write_ch1_offset(self, v):
+        self.tec.set_channel_offset(1, v)
+
+    def write_ch2_offset(self, v):
+        self.tec.set_channel_offset(2, v)
+
+    def write_ch3_offset(self, v):
+        self.tec.set_channel_offset(3, v)
+
+    def write_ch4_offset(self, v):
+        self.tec.set_channel_offset(4, v)
+
+    def read_chany01(self):
+        return self.y[0]
+
+    def read_chanx01(self):
+        return self.x[0]
 
     def read_chany02(self):
         return self.y[1]
