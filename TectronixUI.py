@@ -636,6 +636,9 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
+    # print(__file__, os.path.getmtime(__file__), time.gmtime(os.path.getmtime(__file__)))
+    fmt = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(os.path.getmtime(__file__)))
+    print(fmt)
     # Create the GUI application
     app = QApplication(sys.argv)
     # Instantiate the main window

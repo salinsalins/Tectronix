@@ -1,12 +1,12 @@
 {
     "main_window": {
         "size": [
-            1029,
-            913
+            1702,
+            1492
         ],
         "position": [
-            69,
-            4
+            243,
+            462
         ]
     },
     "log_level": 10,
@@ -28,5 +28,5 @@
         ],
         "index": 0
     },
-    "spinBox": 1
+    "spinBox": 50
 }

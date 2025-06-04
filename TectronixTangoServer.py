@@ -19,7 +19,7 @@ u = os.path.dirname(os.path.realpath(sys.argv[0]))
 util_path = os.path.join(os.path.split(u)[0], 'TangoUtils')
 if util_path not in sys.path: sys.path.append(util_path)
 
-from TangoServerPrototype import TangoServerPrototype
+from TangoServerPrototype import TangoServerPrototype, FMTS
 
 from Tectronix import TectronixTDS
 
@@ -27,7 +27,7 @@ empty_array = numpy.zeros(0, dtype=numpy.float32)
 
 
 class TectronixTangoServer(TangoServerPrototype):
-    server_version_value = '2.2'
+    server_version_value = '2.3 (File modified ' + FMTS + ')'
     server_name_value = 'Tectronix oscilloscope (TDS3014 and others) Tango device server'
     device_list = []
 
